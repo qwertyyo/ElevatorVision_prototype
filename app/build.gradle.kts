@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.example.elevatorvision"
     compileSdk {
-        version = release(36)
+        version = release(34)
     }
 
     defaultConfig {
@@ -38,6 +38,11 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 
