@@ -4,6 +4,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -21,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.example.elevatorvision.CenterCropInfo
-//import com.example.elevatorvision.yolo.CocoLabels
 import com.example.elevatorvision.yolo.DetectionResult
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -34,6 +34,12 @@ private data class OverlayItem(
     val labelBaselineY: Float,
     val textWidth: Float,
     val textHeight: Float
+)
+
+// 🌟 알림창 팝업에 보여줄 글자들을 임시로 저장해두는 바구니 데이터 클래스
+private data class DialogContent(
+    val title: String,
+    val message: String
 )
 
 @Composable
@@ -108,7 +114,6 @@ fun BoundingBoxOverlay(
                     mapRectFrameToScreen(rModel, modelInputSize.toFloat(), modelInputSize.toFloat())
                 }
 
-                //val label = "${CocoLabels.nameOf(d.classId)} ${(d.confidence * 100).toInt()}%"
                 val name = labels.getOrNull(d.classId) ?: "Unknown"
                 val label = "$name ${(d.confidence * 100).toInt()}%"
                 val tw = textPaint.measureText(label)
@@ -123,6 +128,10 @@ fun BoundingBoxOverlay(
         var selected by remember { mutableStateOf<OverlayItem?>(null) }
         var popupPos by remember { mutableStateOf(Offset.Zero) }
 
+        // 🌟 [추가] 현재 화면에 상세 안내 팝업창(AlertDialog)을 띄울지 말지 결정하는 상태 변수
+        var alertDialogContent by remember { mutableStateOf<DialogContent?>(null) }
+
+        // 1. 화면에 초록색 사각형 박스 그리기
         Canvas(Modifier.matchParentSize()) {
             items.forEach {
                 drawRect(
@@ -146,51 +155,26 @@ fun BoundingBoxOverlay(
             }
         }
 
-        if (showInfoIcons) {
-            val iconSizePx = with(density) { 28.dp.toPx() }
-            val gapPx = with(density) { 4.dp.toPx() } // ✅ 라벨에 더 바싹 붙게 약간 줄임
+        // 2. 초록색 사각형 안쪽 영역 클릭 감지 패널
+        items.forEach { item ->
+            val boxLeftDp = with(density) { item.mapped.left.toDp() }
+            val boxTopDp = with(density) { item.mapped.top.toDp() }
+            val boxWidthDp = with(density) { item.mapped.width().toDp() }
+            val boxHeightDp = with(density) { item.mapped.height().toDp() }
 
-            items.forEach { item ->
-                // ✅ 라벨 오른쪽 끝(배경 패딩 포함) 기준으로 i 위치 계산
-                val labelRightPx = item.labelX + paddingX + item.textWidth + paddingX
-
-                var iconX = labelRightPx + gapPx
-                var iconY = (item.labelBaselineY - item.textHeight).coerceAtLeast(0f)
-
-                // 화면 오른쪽 밖으로 나가면 라벨 왼쪽으로 이동
-                if (iconX + iconSizePx > dstWpx) {
-                    iconX = (item.labelX - gapPx - iconSizePx).coerceAtLeast(0f)
-                }
-                iconY = iconY.coerceIn(0f, dstHpx - iconSizePx)
-
-                // ✅ 배경이 확실히 보이도록 Box + TextButton(투명) 조합
-                Box(
-                    modifier = Modifier
-                        .offset { IntOffset(iconX.roundToInt(), iconY.roundToInt()) }
-                        .size(28.dp)
-                        .background(Color(0xAA000000), RoundedCornerShape(6.dp))
-                ) {
-                    TextButton(
-                        onClick = {
-                            if (!enablePopup) return@TextButton
-                            selected = item
-                            popupPos = Offset(iconX + iconSizePx + gapPx, iconY)
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.textButtonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text("i")
+            Box(
+                modifier = Modifier
+                    .offset(x = boxLeftDp, y = boxTopDp)
+                    .size(width = boxWidthDp, height = boxHeightDp)
+                    .clickable {
+                        selected = item
+                        popupPos = Offset(item.mapped.left, item.mapped.bottom)
                     }
-                }
-            }
-        } else {
-            selected = null
+            )
         }
-        if (enablePopup && selected != null) {
+
+        // 3. 초록색 사각형 터치 시 나타나는 세로형 메뉴 팝업
+        if (selected != null) {
             val d = selected!!.det
             val name = labels.getOrNull(d.classId) ?: "Unknown"
 
@@ -204,56 +188,104 @@ fun BoundingBoxOverlay(
                     shape = RoundedCornerShape(12.dp),
                     tonalElevation = 6.dp
                 ) {
-                    Column(Modifier.padding(12.dp)) {
+                    Column(Modifier.padding(12.dp).width(160.dp)) {
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "$name ${(d.confidence * 100).toInt()}%",
+                                name,
                                 style = MaterialTheme.typography.titleMedium
                             )
-                            TextButton(onClick = { selected = null }) {
+                            TextButton(
+                                onClick = { selected = null },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
                                 Text("X")
                             }
                         }
+
                         Spacer(Modifier.height(8.dp))
-                        Text("이것은 $name 입니다.")
+
+                        // 🌟 버튼 1: 검사기준 클릭 시 알림창 띄우기
+                        Button(
+                            onClick = {
+                                alertDialogContent = DialogContent(
+                                    title = "$name - 검사기준",
+                                    message = "이 부품($name)의 안전 검사 기준입니다.\n"
+                                )
+                                selected = null // 메뉴 팝업은 닫아줍니다.
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 6.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                        ) {
+                            Text("검사기준", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                        }
+
+                        Spacer(Modifier.height(6.dp))
+
+                        // 🌟 버튼 2: 표준화 클릭 시 알림창 띄우기
+                        Button(
+                            onClick = {
+                                alertDialogContent = DialogContent(
+                                    title = "$name - 표준화 안내",
+                                    message = "이 부품($name)에 적용되는 한국 승강기 안전 표준화 입니다.\n\n"
+                                )
+                                selected = null // 메뉴 팝업은 닫아줍니다.
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 6.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
+                        ) {
+                            Text("표준화", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                        }
+
+                        Spacer(Modifier.height(6.dp))
+
+                        // 🌟 버튼 3: 검사 가이드 클릭 시 알림창 띄우기
+                        Button(
+                            onClick = {
+                                alertDialogContent = DialogContent(
+                                    title = "$name - 검사 가이드",
+                                    message = "검사 가이드 내용"
+                                )
+                                selected = null // 메뉴 팝업은 닫아줍니다.
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 6.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        ) {
+                            Text("검사 가이드", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                        }
                     }
                 }
             }
         }
 
-//        if (enablePopup && selected != null) {
-//            val d = selected!!.det
-//            Popup(
-//                alignment = Alignment.TopStart,
-//                offset = IntOffset(popupPos.x.roundToInt(), popupPos.y.roundToInt()),
-//                onDismissRequest = { selected = null },
-//                properties = PopupProperties(focusable = true)
-//            ) {
-//                Surface(
-//                    shape = RoundedCornerShape(12.dp),
-//                    tonalElevation = 6.dp
-//                ) {
-//                    Column(Modifier.padding(12.dp)) {
-//                        Row(
-//                            Modifier.fillMaxWidth(),
-//                            horizontalArrangement = Arrangement.SpaceBetween
-//                        ) {
-//                            Text(
-//                                "${CocoLabels.nameOf(d.classId)} ${(d.confidence * 100).toInt()}%",
-//                                style = MaterialTheme.typography.titleMedium
-//                            )
-//                            TextButton(onClick = { selected = null }) {
-//                                Text("X")
-//                            }
-//                        }
-//                        Spacer(Modifier.height(8.dp))
-//                        Text("설명(미구현)")
-//                    }
-//                }
-//            }
-//        }
+        // 4. 🌟 [새로 추가된 구역] 버튼을 눌렀을 때 화면 중앙에 뜨는 실제 안내창(AlertDialog)
+        if (alertDialogContent != null) {
+            AlertDialog(
+                onDismissRequest = { alertDialogContent = null }, // 바깥을 누르면 닫힘
+                title = {
+                    Text(text = alertDialogContent!!.title, style = MaterialTheme.typography.titleLarge)
+                },
+                text = {
+                    Text(text = alertDialogContent!!.message, style = MaterialTheme.typography.bodyLarge)
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { alertDialogContent = null } // '확인' 버튼을 누르면 닫힘
+                    ) {
+                        Text("확인")
+                    }
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
     }
 }
