@@ -1,5 +1,7 @@
 package com.example.elevatorvision.ui
 
+import androidx.compose.ui.platform.LocalContext
+import com.example.elevatorvision.StandardsRepository
 import android.graphics.Paint
 import android.graphics.RectF
 import androidx.compose.foundation.Canvas
@@ -54,6 +56,8 @@ fun BoundingBoxOverlay(
     cropInfo: CenterCropInfo? = null
 ) {
     BoxWithConstraints(modifier = modifier) {
+        val context = LocalContext.current
+        LaunchedEffect(Unit) { StandardsRepository.load(context) }
 
         val density = LocalDensity.current
         val dstWpx = with(density) { maxWidth.toPx() }
@@ -130,6 +134,7 @@ fun BoundingBoxOverlay(
 
         // 🌟 [추가] 현재 화면에 상세 안내 팝업창(AlertDialog)을 띄울지 말지 결정하는 상태 변수
         var alertDialogContent by remember { mutableStateOf<DialogContent?>(null) }
+        var showStandardsFor by remember { mutableStateOf<String?>(null) }
 
         // 1. 화면에 초록색 사각형 박스 그리기
         Canvas(Modifier.matchParentSize()) {
@@ -230,11 +235,8 @@ fun BoundingBoxOverlay(
                         // 🌟 버튼 2: 표준화 클릭 시 알림창 띄우기
                         Button(
                             onClick = {
-                                alertDialogContent = DialogContent(
-                                    title = "$name - 표준화 안내",
-                                    message = "이 부품($name)에 적용되는 한국 승강기 안전 표준화 입니다.\n\n"
-                                )
-                                selected = null // 메뉴 팝업은 닫아줍니다.
+                                showStandardsFor = name
+                                selected = null
                             },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 6.dp),
@@ -285,6 +287,13 @@ fun BoundingBoxOverlay(
                     }
                 },
                 shape = RoundedCornerShape(16.dp)
+            )
+        }
+        if (showStandardsFor != null) {
+            StandardsListDialog(
+                partName = showStandardsFor!!,
+                items = StandardsRepository.getByClassName(showStandardsFor!!),
+                onDismiss = { showStandardsFor = null }
             )
         }
     }
