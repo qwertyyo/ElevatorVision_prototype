@@ -15,6 +15,8 @@ data class StandardItem(
 data class LawItem(
     val id: String,
     val effectiveDate: String?,
+    val articleNo: String,
+    val articleTitle: String,
     val content: String
 )
 
@@ -88,6 +90,8 @@ object StandardsRepository {
                     LawItem(
                         id = "$className-$i",
                         effectiveDate = effectiveDate,
+                        articleNo = obj.optString("article_no"),
+                        articleTitle = obj.optString("article_title"),
                         content = obj.optString("content")
                     )
                 )

@@ -29,7 +29,12 @@ fun StandardItem.toListDialogEntry(): ListDialogEntry {
 }
 
 fun LawItem.toListDialogEntry(): ListDialogEntry {
-    val header = if (effectiveDate != null) "$effectiveDate 부터 적용" else "시행일 미상"
+    val dateLabel = if (effectiveDate != null) "$effectiveDate 부터 적용" else "시행일 미상"
+    val header = if (articleNo.isNotBlank()) {
+        "[$articleNo] $articleTitle ($dateLabel)"
+    } else {
+        dateLabel
+    }
     return ListDialogEntry(id = id, header = header, body = content)
 }
 
