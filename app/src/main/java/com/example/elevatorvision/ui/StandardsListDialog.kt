@@ -14,11 +14,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.elevatorvision.StandardItem
+import com.example.elevatorvision.LawItem
+
+// 표준화/검사기준 공용 표시 단위: 목록에 보일 제목(header)과 펼치면 나오는 본문(body)
+data class ListDialogEntry(
+    val id: String,
+    val header: String,
+    val body: String
+)
+
+fun StandardItem.toListDialogEntry(): ListDialogEntry {
+    val yearLabel = if (year != null) " ($year 년 ${round ?: ""}차)" else ""
+    return ListDialogEntry(id = id, header = "$title$yearLabel", body = standardization)
+}
+
+fun LawItem.toListDialogEntry(): ListDialogEntry {
+    val header = if (effectiveDate != null) "$effectiveDate 부터 적용" else "시행일 미상"
+    return ListDialogEntry(id = id, header = header, body = content)
+}
 
 @Composable
 fun StandardsListDialog(
     partName: String,
-    items: List<StandardItem>,
+    dialogTitle: String,
+    entries: List<ListDialogEntry>,
     onDismiss: () -> Unit
 ) {
     var expandedIds by remember { mutableStateOf(setOf<String>()) }
@@ -41,7 +60,7 @@ fun StandardsListDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "$partName - 표준화 안내 (${items.size}건)",
+                        text = "$partName - $dialogTitle (${entries.size}건)",
                         style = MaterialTheme.typography.titleMedium
                     )
                     TextButton(onClick = onDismiss) { Text("닫기") }
@@ -50,23 +69,23 @@ fun StandardsListDialog(
                 Spacer(Modifier.height(8.dp))
                 Divider()
 
-                if (items.isEmpty()) {
+                if (entries.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("관련 표준화 자료가 없습니다.")
+                        Text("관련 자료가 없습니다.")
                     }
                 } else {
                     LazyColumn(Modifier.fillMaxSize()) {
-                        items(items = items, key = { it.id }) { item ->
-                            val isExpanded = expandedIds.contains(item.id)
+                        items(items = entries, key = { it.id }) { entry ->
+                            val isExpanded = expandedIds.contains(entry.id)
 
                             Column(
                                 Modifier
                                     .fillMaxWidth()
                                     .clickable {
                                         expandedIds = if (isExpanded)
-                                            expandedIds - item.id
+                                            expandedIds - entry.id
                                         else
-                                            expandedIds + item.id
+                                            expandedIds + entry.id
                                     }
                                     .padding(vertical = 10.dp)
                             ) {
@@ -75,22 +94,17 @@ fun StandardsListDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column(Modifier.weight(1f)) {
-                                        Text(item.title, style = MaterialTheme.typography.bodyLarge)
-                                        if (item.year != null) {
-                                            Text(
-                                                "${item.year}년 ${item.round ?: ""}차",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
+                                    Text(
+                                        entry.header,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.weight(1f)
+                                    )
                                     Text(if (isExpanded) "▲" else "▼")
                                 }
 
                                 AnimatedVisibility(visible = isExpanded) {
                                     Text(
-                                        item.standardization,
+                                        entry.body,
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.padding(top = 8.dp)
                                     )

@@ -135,6 +135,7 @@ fun BoundingBoxOverlay(
         // 🌟 [추가] 현재 화면에 상세 안내 팝업창(AlertDialog)을 띄울지 말지 결정하는 상태 변수
         var alertDialogContent by remember { mutableStateOf<DialogContent?>(null) }
         var showStandardsFor by remember { mutableStateOf<String?>(null) }
+        var showLawFor by remember { mutableStateOf<String?>(null) }
 
         // 1. 화면에 초록색 사각형 박스 그리기
         Canvas(Modifier.matchParentSize()) {
@@ -216,11 +217,8 @@ fun BoundingBoxOverlay(
                         // 🌟 버튼 1: 검사기준 클릭 시 알림창 띄우기
                         Button(
                             onClick = {
-                                alertDialogContent = DialogContent(
-                                    title = "$name - 검사기준",
-                                    message = "이 부품($name)의 안전 검사 기준입니다.\n"
-                                )
-                                selected = null // 메뉴 팝업은 닫아줍니다.
+                                showLawFor = name
+                                selected = null
                             },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 6.dp),
@@ -290,10 +288,22 @@ fun BoundingBoxOverlay(
             )
         }
         if (showStandardsFor != null) {
+            val name = showStandardsFor!!
             StandardsListDialog(
-                partName = showStandardsFor!!,
-                items = StandardsRepository.getByClassName(showStandardsFor!!),
+                partName = name,
+                dialogTitle = "표준화 안내",
+                entries = StandardsRepository.getByClassName(name).map { it.toListDialogEntry() },
                 onDismiss = { showStandardsFor = null }
+            )
+        }
+
+        if (showLawFor != null) {
+            val name = showLawFor!!
+            StandardsListDialog(
+                partName = name,
+                dialogTitle = "검사기준 안내",
+                entries = StandardsRepository.getLawByClassName(name).map { it.toListDialogEntry() },
+                onDismiss = { showLawFor = null }
             )
         }
     }
