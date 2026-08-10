@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
 /* ======================= Simple Nav ======================= */
 
 private sealed class Screen {
+    object Start : Screen()
     object Camera : Screen()
     object Storage : Screen()
     data class StorageDetail(val sessionId: String) : Screen()
@@ -75,9 +76,12 @@ private sealed class Screen {
 
 @Composable
 private fun AppRoot() {
-    var screen by remember { mutableStateOf<Screen>(Screen.Camera) }
+    var screen by remember { mutableStateOf<Screen>(Screen.Start) }
 
     when (val s = screen) {
+        Screen.Start -> StartScreen(
+            onStartInspection = { screen = Screen.Camera }
+        )
         Screen.Camera -> CameraScreen(
             onOpenStorage = { screen = Screen.Storage }
         )
@@ -89,6 +93,45 @@ private fun AppRoot() {
             sessionId = s.sessionId,
             onBack = { screen = Screen.Storage }
         )
+    }
+}
+
+/* ======================= Start ======================= */
+
+@Composable
+private fun StartScreen(
+    onStartInspection: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Text(
+                text = "ElevatorVision",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Text(
+                text = "AI · AR 승강기 검사 도우미",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick = onStartInspection,
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(56.dp)
+            ) {
+                Text("검사시작", style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
 
@@ -529,6 +572,7 @@ private data class StoredDetail(
     val cropInfo: CenterCropInfo?,
     val detections: List<DetectionResult>
 )
+
 
 @Composable
 private fun StorageDetailScreen(
