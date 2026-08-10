@@ -188,7 +188,11 @@ fun BoundingBoxOverlay(
                 alignment = Alignment.TopStart,
                 offset = IntOffset(popupPos.x.roundToInt(), popupPos.y.roundToInt()),
                 onDismissRequest = { selected = null },
-                properties = PopupProperties(focusable = true)
+                properties = PopupProperties(
+                    // 하위 안내창(검사기준/표준화/검사가이드)이 떠 있는 동안엔
+                    // 포커스를 넘겨줘야 하므로 focusable을 꺼서 이 메뉴가 자동으로 닫히지 않게 함
+                    focusable = alertDialogContent == null && showStandardsFor == null && showLawFor == null
+                )
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
@@ -218,7 +222,6 @@ fun BoundingBoxOverlay(
                         Button(
                             onClick = {
                                 showLawFor = name
-                                selected = null
                             },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 6.dp),
@@ -234,7 +237,6 @@ fun BoundingBoxOverlay(
                         Button(
                             onClick = {
                                 showStandardsFor = name
-                                selected = null
                             },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 6.dp),
@@ -253,7 +255,6 @@ fun BoundingBoxOverlay(
                                     title = "$name - 검사 가이드",
                                     message = "검사 가이드 내용"
                                 )
-                                selected = null // 메뉴 팝업은 닫아줍니다.
                             },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 6.dp),

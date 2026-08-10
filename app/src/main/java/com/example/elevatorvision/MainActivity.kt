@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -77,6 +78,17 @@ private sealed class Screen {
 @Composable
 private fun AppRoot() {
     var screen by remember { mutableStateOf<Screen>(Screen.Start) }
+
+    // Start 화면에서는 시스템 기본 동작(앱 종료)에 맡기고,
+    // 그 외 화면에서는 뒤로가기를 가로채서 이전 화면으로 이동
+    BackHandler(enabled = screen != Screen.Start) {
+        screen = when (val s = screen) {
+            is Screen.StorageDetail -> Screen.Storage
+            Screen.Storage -> Screen.Camera
+            Screen.Camera -> Screen.Start
+            Screen.Start -> Screen.Start // 도달하지 않음
+        }
+    }
 
     when (val s = screen) {
         Screen.Start -> StartScreen(
@@ -184,6 +196,13 @@ private fun CameraScreen(
     var capturedCropInfo by remember { mutableStateOf<CenterCropInfo?>(null) }
 
     val isCaptured = capturedFrame != null
+
+    // 촬영본을 보고 있을 때는 뒤로가기 시 라이브 화면으로 먼저 복귀
+    BackHandler(enabled = isCaptured) {
+        capturedFrame = null
+        capturedDetections = emptyList()
+        capturedCropInfo = null
+    }
 
     /* ---------- Save ---------- */
     fun saveCaptured(): Boolean {
@@ -572,7 +591,6 @@ private data class StoredDetail(
     val cropInfo: CenterCropInfo?,
     val detections: List<DetectionResult>
 )
-
 
 @Composable
 private fun StorageDetailScreen(
