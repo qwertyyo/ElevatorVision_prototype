@@ -234,6 +234,7 @@ private fun CameraScreen(
             capturedDetections.forEach { d ->
                 arr.put(JSONObject().apply {
                     put("classId", d.classId)
+                    put("className", d.className ?: "Unknown")   // 🌟 추가
                     put("confidence", d.confidence)
                     put("left", d.left)
                     put("top", d.top)
@@ -729,6 +730,7 @@ private fun loadDetail(context: android.content.Context, sessionId: String): Sto
                 add(
                     DetectionResult(
                         classId = o.optInt("classId"),
+                        className = if (o.has("className")) o.optString("className") else null,   // 🌟 추가 (옛날 데이터엔 없을 수 있음)
                         confidence = o.optDouble("confidence").toFloat(),
                         left = o.optDouble("left").toFloat(),
                         top = o.optDouble("top").toFloat(),

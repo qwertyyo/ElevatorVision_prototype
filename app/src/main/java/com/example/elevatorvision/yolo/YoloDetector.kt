@@ -85,7 +85,8 @@ class YoloDetector(context: Context) {
                     right = right,
                     bottom = bottom,
                     confidence = score,
-                    classId = classId
+                    classId = classId,
+                    className = labels.getOrNull(classId) ?: "Unknown"   // 🌟 추가
                 )
             )
         }

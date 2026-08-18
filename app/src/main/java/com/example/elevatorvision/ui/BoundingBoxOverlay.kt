@@ -118,7 +118,7 @@ fun BoundingBoxOverlay(
                     mapRectFrameToScreen(rModel, modelInputSize.toFloat(), modelInputSize.toFloat())
                 }
 
-                val name = labels.getOrNull(d.classId) ?: "Unknown"
+                val name = d.className ?: labels.getOrNull(d.classId) ?: "Unknown"
                 val label = "$name ${(d.confidence * 100).toInt()}%"
                 val tw = textPaint.measureText(label)
                 val x = mapped.left.coerceAtLeast(0f)
@@ -182,7 +182,7 @@ fun BoundingBoxOverlay(
         // 3. 초록색 사각형 터치 시 나타나는 세로형 메뉴 팝업
         if (selected != null) {
             val d = selected!!.det
-            val name = labels.getOrNull(d.classId) ?: "Unknown"
+            val name = d.className ?: labels.getOrNull(d.classId) ?: "Unknown"
 
             Popup(
                 alignment = Alignment.TopStart,
