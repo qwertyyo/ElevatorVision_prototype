@@ -88,6 +88,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
@@ -304,6 +305,13 @@ private fun CameraScreen(
     var focusMarker by remember { mutableStateOf<Offset?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
+    // YOLO 추론은 무거운 작업이라 메인 스레드에서 돌리면 화면 렌더링 자체가 끊긴다.
+    // 전용 백그라운드 스레드에서 실행해서 메인 스레드(=Compose 렌더링, 제스처 처리)를 막지 않게 한다.
+    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+    DisposableEffect(Unit) {
+        onDispose { analysisExecutor.shutdown() }
+    }
+
     /* ---------- LIVE ---------- */
     var liveFrame by remember { mutableStateOf<Bitmap?>(null) }
     var liveDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
@@ -404,7 +412,7 @@ private fun CameraScreen(
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
 
-                    analysis.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { image ->
+                    analysis.setAnalyzer(analysisExecutor) { image ->
                         try {
                             val bmp = ImageUtils.imageProxyToBitmap(image)
                             val rotated = ImageUtils.rotateBitmap(
