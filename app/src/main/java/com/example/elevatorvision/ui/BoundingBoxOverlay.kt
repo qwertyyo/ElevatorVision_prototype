@@ -5,37 +5,32 @@ import com.example.elevatorvision.StandardsRepository
 import android.graphics.Paint
 import android.graphics.RectF
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import com.example.elevatorvision.CenterCropInfo
+import com.example.elevatorvision.ui.theme.BrandBlue
+import com.example.elevatorvision.ui.theme.BrandGreen
+import com.example.elevatorvision.ui.theme.DetectionAccent
 import com.example.elevatorvision.yolo.DetectionResult
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 private data class OverlayItem(
     val det: DetectionResult,
     val mapped: RectF,
-    val label: String,
-    val labelX: Float,
-    val labelBaselineY: Float,
-    val textWidth: Float,
-    val textHeight: Float
+    val label: String
 )
 
 // 🌟 알림창 팝업에 보여줄 글자들을 임시로 저장해두는 바구니 데이터 클래스
@@ -86,25 +81,44 @@ fun BoundingBoxOverlay(
             )
         }
 
-        val textPaint = remember {
+        val namePaint = remember {
             Paint().apply {
                 isAntiAlias = true
-                textSize = 36f
+                textSize = 32f
                 color = android.graphics.Color.WHITE
+                isFakeBoldText = true
             }
         }
-
+        val confPaint = remember {
+            Paint().apply {
+                isAntiAlias = true
+                textSize = 32f
+                color = android.graphics.Color.parseColor("#29E0E8")
+            }
+        }
         val bgPaint = remember {
             Paint().apply {
                 isAntiAlias = true
-                color = android.graphics.Color.argb(180, 0, 0, 0)
+                color = android.graphics.Color.argb(200, 10, 16, 22)
+            }
+        }
+        val borderPaint = remember {
+            Paint().apply {
+                isAntiAlias = true
+                style = Paint.Style.STROKE
+                strokeWidth = 2f
+                color = android.graphics.Color.parseColor("#4029E0E8")
+            }
+        }
+        val dotPaint = remember {
+            Paint().apply {
+                isAntiAlias = true
+                color = android.graphics.Color.parseColor("#29E0E8")
             }
         }
 
-        val fm = textPaint.fontMetrics
+        val fm = namePaint.fontMetrics
         val textHeight = fm.bottom - fm.top
-        val paddingX = 10f
-        val paddingY = 8f
 
         val items = detections
             .sortedByDescending { it.confidence }
@@ -117,51 +131,75 @@ fun BoundingBoxOverlay(
                 } else {
                     mapRectFrameToScreen(rModel, modelInputSize.toFloat(), modelInputSize.toFloat())
                 }
-
                 val name = d.className ?: labels.getOrNull(d.classId) ?: "Unknown"
-                val label = "$name ${(d.confidence * 100).toInt()}%"
-                val tw = textPaint.measureText(label)
-                val x = mapped.left.coerceAtLeast(0f)
-                val yTop = mapped.top
-                val baselineY =
-                    if (yTop - textHeight - 10f >= 0f) yTop else yTop + textHeight + 10f
-
-                OverlayItem(d, mapped, label, x, baselineY, tw, textHeight)
+                OverlayItem(d, mapped, name)
             }
 
         var selected by remember { mutableStateOf<OverlayItem?>(null) }
-        var popupPos by remember { mutableStateOf(Offset.Zero) }
-
-        // 🌟 [추가] 현재 화면에 상세 안내 팝업창(AlertDialog)을 띄울지 말지 결정하는 상태 변수
-        var alertDialogContent by remember { mutableStateOf<DialogContent?>(null) }
         var showStandardsFor by remember { mutableStateOf<String?>(null) }
         var showLawFor by remember { mutableStateOf<String?>(null) }
+        var alertDialogContent by remember { mutableStateOf<DialogContent?>(null) }
 
-        // 1. 화면에 초록색 사각형 박스 그리기
+        // 1. 인식 박스: 모서리 브라켓 + 라벨 필
         Canvas(Modifier.matchParentSize()) {
-            items.forEach {
-                drawRect(
-                    color = Color.Green,
-                    topLeft = Offset(it.mapped.left, it.mapped.top),
-                    size = Size(it.mapped.width(), it.mapped.height()),
-                    style = Stroke(3f)
-                )
+            val strokePx = 3f
+            val bracketLen = 18f
+            val inset = 4f
 
-                val bgLeft = it.labelX
-                val bgTop = it.labelBaselineY - it.textHeight
-                val bgRight = it.labelX + it.textWidth + paddingX * 2
-                val bgBottom = it.labelBaselineY + paddingY
+            items.forEach { item ->
+                val r = item.mapped
 
-                drawContext.canvas.nativeCanvas.drawRoundRect(
-                    bgLeft, bgTop, bgRight, bgBottom, 8f, 8f, bgPaint
-                )
-                drawContext.canvas.nativeCanvas.drawText(
-                    it.label, it.labelX + paddingX, it.labelBaselineY, textPaint
-                )
+                fun corner(cx: Float, cy: Float, dx: Int, dy: Int) {
+                    drawLine(
+                        color = DetectionAccent,
+                        start = Offset(cx, cy),
+                        end = Offset(cx + bracketLen * dx, cy),
+                        strokeWidth = strokePx
+                    )
+                    drawLine(
+                        color = DetectionAccent,
+                        start = Offset(cx, cy),
+                        end = Offset(cx, cy + bracketLen * dy),
+                        strokeWidth = strokePx
+                    )
+                }
+                corner(r.left - inset, r.top - inset, 1, 1)
+                corner(r.right + inset, r.top - inset, -1, 1)
+                corner(r.left - inset, r.bottom + inset, 1, -1)
+                corner(r.right + inset, r.bottom + inset, -1, -1)
+
+                // 라벨 필: [●] 이름  신뢰도%
+                val confText = "${(item.det.confidence * 100).let { "%.1f".format(it) }}%"
+                val dotRadius = 5f
+                val gap = 8f
+                val paddingX = 12f
+                val paddingY = 8f
+
+                val nameW = namePaint.measureText(item.label)
+                val confW = confPaint.measureText(confText)
+                val pillW = paddingX * 2 + dotRadius * 2 + gap + nameW + gap + confW
+                val pillH = textHeight + paddingY * 2
+
+                val pillLeft = r.left.coerceAtLeast(0f)
+                val pillTop = if (r.top - pillH - 8f >= 0f) r.top - pillH - 8f else r.bottom + 8f
+
+                drawContext.canvas.nativeCanvas.apply {
+                    val rr = android.graphics.RectF(pillLeft, pillTop, pillLeft + pillW, pillTop + pillH)
+                    drawRoundRect(rr, 8f, 8f, bgPaint)
+                    drawRoundRect(rr, 8f, 8f, borderPaint)
+
+                    val textBaseline = pillTop + pillH - paddingY - fm.bottom
+                    var x = pillLeft + paddingX
+                    drawCircle(x + dotRadius, textBaseline - textHeight / 2.5f, dotRadius, dotPaint)
+                    x += dotRadius * 2 + gap
+                    drawText(item.label, x, textBaseline, namePaint)
+                    x += nameW + gap
+                    drawText(confText, x, textBaseline, confPaint)
+                }
             }
         }
 
-        // 2. 초록색 사각형 안쪽 영역 클릭 감지 패널
+        // 2. 박스 클릭 감지 패널
         items.forEach { item ->
             val boxLeftDp = with(density) { item.mapped.left.toDp() }
             val boxTopDp = with(density) { item.mapped.top.toDp() }
@@ -172,129 +210,82 @@ fun BoundingBoxOverlay(
                 modifier = Modifier
                     .offset(x = boxLeftDp, y = boxTopDp)
                     .size(width = boxWidthDp, height = boxHeightDp)
-                    .clickable {
-                        selected = item
-                        popupPos = Offset(item.mapped.left, item.mapped.bottom)
-                    }
+                    .clickable { selected = item }
             )
         }
 
-        // 3. 초록색 사각형 터치 시 나타나는 세로형 메뉴 팝업
-        if (selected != null) {
-            val d = selected!!.det
-            val name = d.className ?: labels.getOrNull(d.classId) ?: "Unknown"
+        // 3. 부품 선택 바텀시트: 검사기준 / 표준화 / 검사가이드
+        val currentSelected = selected
+        if (currentSelected != null) {
+            val name = currentSelected.det.className
+                ?: labels.getOrNull(currentSelected.det.classId)
+                ?: "Unknown"
 
-            Popup(
-                alignment = Alignment.TopStart,
-                offset = IntOffset(popupPos.x.roundToInt(), popupPos.y.roundToInt()),
-                onDismissRequest = { selected = null },
-                properties = PopupProperties(
-                    // 하위 안내창(검사기준/표준화/검사가이드)이 떠 있는 동안엔
-                    // 포커스를 넘겨줘야 하므로 focusable을 꺼서 이 메뉴가 자동으로 닫히지 않게 함
-                    focusable = alertDialogContent == null && showStandardsFor == null && showLawFor == null
-                )
+            BottomSheetScaffold(
+                visible = true,
+                onDismiss = { selected = null },
+                eyebrow = "AI 인식 부품",
+                title = name,
+                modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    tonalElevation = 6.dp
-                ) {
-                    Column(Modifier.padding(12.dp).width(160.dp)) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                name,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            TextButton(
-                                onClick = { selected = null },
-                                contentPadding = PaddingValues(0.dp)
-                            ) {
-                                Text("X")
-                            }
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        // 🌟 버튼 1: 검사기준 클릭 시 알림창 띄우기
-                        Button(
-                            onClick = {
-                                showLawFor = name
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 6.dp),
-                            shape = RoundedCornerShape(4.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                        ) {
-                            Text("검사기준", style = MaterialTheme.typography.bodyMedium, color = Color.White)
-                        }
-
-                        Spacer(Modifier.height(6.dp))
-
-                        // 🌟 버튼 2: 표준화 클릭 시 알림창 띄우기
-                        Button(
-                            onClick = {
-                                showStandardsFor = name
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 6.dp),
-                            shape = RoundedCornerShape(4.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
-                        ) {
-                            Text("표준화", style = MaterialTheme.typography.bodyMedium, color = Color.White)
-                        }
-
-                        Spacer(Modifier.height(6.dp))
-
-                        // 🌟 버튼 3: 검사 가이드 클릭 시 알림창 띄우기
-                        Button(
-                            onClick = {
-                                alertDialogContent = DialogContent(
-                                    title = "$name - 검사 가이드",
-                                    message = "검사 가이드 내용"
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 6.dp),
-                            shape = RoundedCornerShape(4.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                        ) {
-                            Text("검사 가이드", style = MaterialTheme.typography.bodyMedium, color = Color.White)
-                        }
+                SheetMenuRow(
+                    icon = Icons.Filled.Gavel,
+                    label = "검사기준",
+                    accentColor = BrandBlue,
+                    onClick = { showLawFor = name }
+                )
+                SheetMenuRow(
+                    icon = Icons.Filled.FactCheck,
+                    label = "표준화",
+                    accentColor = BrandBlue,
+                    onClick = { showStandardsFor = name }
+                )
+                SheetMenuRow(
+                    icon = Icons.Filled.MenuBook,
+                    label = "검사 가이드",
+                    accentColor = BrandBlue,
+                    onClick = {
+                        alertDialogContent = DialogContent(
+                            title = "$name - 검사 가이드",
+                            message = "검사 가이드 내용"
+                        )
                     }
-                }
+                )
             }
         }
 
-        // 4. 🌟 [새로 추가된 구역] 버튼을 눌렀을 때 화면 중앙에 뜨는 실제 안내창(AlertDialog)
+        // 4. 검사가이드 안내 (임시 알림)
         if (alertDialogContent != null) {
-            AlertDialog(
-                onDismissRequest = { alertDialogContent = null }, // 바깥을 누르면 닫힘
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { alertDialogContent = null },
                 title = {
-                    Text(text = alertDialogContent!!.title, style = MaterialTheme.typography.titleLarge)
+                    androidx.compose.material3.Text(
+                        text = alertDialogContent!!.title,
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 },
                 text = {
-                    Text(text = alertDialogContent!!.message, style = MaterialTheme.typography.bodyLarge)
+                    androidx.compose.material3.Text(
+                        text = alertDialogContent!!.message,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 },
                 confirmButton = {
-                    Button(
-                        onClick = { alertDialogContent = null } // '확인' 버튼을 누르면 닫힘
-                    ) {
-                        Text("확인")
+                    androidx.compose.material3.Button(onClick = { alertDialogContent = null }) {
+                        androidx.compose.material3.Text("확인")
                     }
-                },
-                shape = RoundedCornerShape(16.dp)
+                }
             )
         }
+
         if (showStandardsFor != null) {
             val name = showStandardsFor!!
             StandardsListDialog(
                 partName = name,
                 dialogTitle = "표준화 안내",
                 entries = StandardsRepository.getByClassName(name).map { it.toListDialogEntry() },
-                onDismiss = { showStandardsFor = null }
+                onDismiss = { showStandardsFor = null },
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
 
@@ -304,7 +295,8 @@ fun BoundingBoxOverlay(
                 partName = name,
                 dialogTitle = "검사기준 안내",
                 entries = StandardsRepository.getLawByClassName(name).map { it.toListDialogEntry() },
-                onDismiss = { showLawFor = null }
+                onDismiss = { showLawFor = null },
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
     }
