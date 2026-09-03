@@ -1,5 +1,6 @@
 package com.example.elevatorvision.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.platform.LocalContext
 import com.example.elevatorvision.StandardsRepository
 import android.graphics.Paint
@@ -167,6 +168,19 @@ fun BoundingBoxOverlay(
         // 겹쳐 보이므로, 호출한 쪽(CameraScreen)이 그 UI를 숨길 수 있게 알려준다.
         val anySheetVisible = selected != null || showStandardsFor != null || showLawFor != null
         LaunchedEffect(anySheetVisible) { onSheetVisibleChanged(anySheetVisible) }
+
+        // 이 시트들은 실제 Dialog가 아니라 직접 그린 오버레이라 시스템 뒤로가기를 스스로
+        // 소비하지 않는다. 그대로 두면 화면 자체를 전환하는 상위 BackHandler(AppRoot)가
+        // 바로 발동해서 시트를 건너뛰고 화면이 통째로 튕겨버린다.
+        // 아래(부품 선택 시트)를 먼저 등록하고 위(검사기준/표준화 시트)를 나중에 등록하면,
+        // OnBackPressedDispatcher가 나중에 등록된 콜백을 우선 호출하므로
+        // "위 레이어부터 하나씩" 닫히는 순서가 보장된다.
+        BackHandler(enabled = selected != null) {
+            selected = null
+        }
+        BackHandler(enabled = showStandardsFor != null || showLawFor != null) {
+            if (showLawFor != null) showLawFor = null else showStandardsFor = null
+        }
 
         // 1. 인식 박스: 모서리 브라켓 + 라벨 필
         Canvas(Modifier.matchParentSize()) {
