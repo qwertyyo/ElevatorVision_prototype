@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -312,6 +314,27 @@ private fun CameraScreen(
         onDispose { analysisExecutor.shutdown() }
     }
 
+    // 화면(UI)은 세로로 완전히 고정한다(매니페스트 screenOrientation="portrait").
+    // Preview/오버레이 좌표계는 절대 안 건드리고, 대신 폰을 물리적으로 얼마나 기울여
+    // 들고 있는지만 가속도계로 추적해서, 모델에 넣을 크롭과 라벨 텍스트 방향을
+    // 보정하는 데 쓴다.
+    var physicalRotation by remember { mutableStateOf(Surface.ROTATION_0) }
+    DisposableEffect(Unit) {
+        val listener = object : OrientationEventListener(context) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                physicalRotation = when (orientation) {
+                    in 45 until 135 -> Surface.ROTATION_270
+                    in 135 until 225 -> Surface.ROTATION_180
+                    in 225 until 315 -> Surface.ROTATION_90
+                    else -> Surface.ROTATION_0
+                }
+            }
+        }
+        if (listener.canDetectOrientation()) listener.enable()
+        onDispose { listener.disable() }
+    }
+
     /* ---------- LIVE ---------- */
     var liveFrame by remember { mutableStateOf<Bitmap?>(null) }
     var liveDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
@@ -353,6 +376,7 @@ private fun CameraScreen(
                     put("cropTop", ci.cropTop)
                     put("cropSize", ci.cropSize)
                     put("targetSize", ci.targetSize)
+                    put("extraRotationDegrees", ci.extraRotationDegrees)
                 })
             }
 
@@ -415,13 +439,25 @@ private fun CameraScreen(
                     analysis.setAnalyzer(analysisExecutor) { image ->
                         try {
                             val bmp = ImageUtils.imageProxyToBitmap(image)
-                            val rotated = ImageUtils.rotateBitmap(
-                                bmp,
-                                image.imageInfo.rotationDegrees
-                            )
+                            val baseRotationDegrees = image.imageInfo.rotationDegrees
+                            val rotated = ImageUtils.rotateBitmap(bmp, baseRotationDegrees)
                             liveFrame = rotated
 
-                            val prep = ImageUtils.prepareModelInputCenterCrop(rotated, 640)
+                            // 화면(프리뷰/오버레이)이 실제로 그려지는 기준(baseRotationDegrees)은
+                            // 그대로 두고, "지금 폰을 물리적으로 얼마나 더 돌려 잡고 있는지"만큼만
+                            // 모델 입력용 크롭에 추가로 적용한다. CameraInfo.getSensorRotationDegrees()는
+                            // targetRotation을 실제로 바꾸지 않고도 그 차이를 계산해준다.
+                            val sensorRotationForPhysical = camera?.cameraInfo
+                                ?.getSensorRotationDegrees(physicalRotation)
+                            val extraRotationDegrees = if (sensorRotationForPhysical != null) {
+                                ((sensorRotationForPhysical - baseRotationDegrees) % 360 + 360) % 360
+                            } else 0
+
+                            val prep = ImageUtils.prepareModelInputCenterCrop(
+                                rotated,
+                                640,
+                                extraRotationDegrees
+                            )
                             liveCropInfo = prep.cropInfo
                             liveDetections = yoloDetector.detect(prep.input)
                         } finally {
@@ -1032,7 +1068,8 @@ private fun loadDetail(context: android.content.Context, sessionId: String): Sto
                 cropLeft = ci.optInt("cropLeft"),
                 cropTop = ci.optInt("cropTop"),
                 cropSize = ci.optInt("cropSize"),
-                targetSize = ci.optInt("targetSize")
+                targetSize = ci.optInt("targetSize"),
+                extraRotationDegrees = ci.optInt("extraRotationDegrees", 0)
             )
         }
 

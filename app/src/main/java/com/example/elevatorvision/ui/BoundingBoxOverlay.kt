@@ -70,14 +70,36 @@ fun BoundingBoxOverlay(
             )
         }
 
+        // 모델 입력을 만들 때 폰의 물리적 방향에 맞춰 정사각형 크롭을 추가로 돌렸다면(extraRotationDegrees),
+        // 박스 좌표는 그 회전이 적용된 640x640 좌표계로 나온다. 화면 매핑은 회전 전 좌표계(크롭 좌표계)
+        // 기준이므로, 먼저 이 회전을 역으로 되돌려야 박스가 화면과 어긋나지 않는다.
+        fun unrotateInSquare(r: RectF, size: Float, degrees: Int): RectF {
+            val norm = ((degrees % 360) + 360) % 360
+            if (norm == 0) return r
+            fun inv(x: Float, y: Float): Offset = when (norm) {
+                90 -> Offset(y, size - x)
+                180 -> Offset(size - x, size - y)
+                270 -> Offset(size - y, x)
+                else -> Offset(x, y)
+            }
+            val p1 = inv(r.left, r.top)
+            val p2 = inv(r.right, r.top)
+            val p3 = inv(r.right, r.bottom)
+            val p4 = inv(r.left, r.bottom)
+            val xs = floatArrayOf(p1.x, p2.x, p3.x, p4.x)
+            val ys = floatArrayOf(p1.y, p2.y, p3.y, p4.y)
+            return RectF(xs.min(), ys.min(), xs.max(), ys.max())
+        }
+
         fun modelRectToFrameRect(r: RectF): RectF {
             val info = cropInfo ?: return r
+            val unrotated = unrotateInSquare(r, info.targetSize.toFloat(), info.extraRotationDegrees)
             val scale = info.cropSize.toFloat() / info.targetSize
             return RectF(
-                r.left * scale + info.cropLeft,
-                r.top * scale + info.cropTop,
-                r.right * scale + info.cropLeft,
-                r.bottom * scale + info.cropTop
+                unrotated.left * scale + info.cropLeft,
+                unrotated.top * scale + info.cropTop,
+                unrotated.right * scale + info.cropLeft,
+                unrotated.bottom * scale + info.cropTop
             )
         }
 
@@ -183,7 +205,23 @@ fun BoundingBoxOverlay(
                 val pillLeft = r.left.coerceAtLeast(0f)
                 val pillTop = if (r.top - pillH - 8f >= 0f) r.top - pillH - 8f else r.bottom + 8f
 
+                // 화면 자체는 세로로 고정돼 있지만, 폰을 기울여 들면 글자만 화면에 그대로
+                // 붙어 있어 사용자 눈에는 돌아간 것처럼 보인다. 라벨 필만 자기 중심을 축으로
+                // 반대로 돌려 그려서, 폰을 어느 방향으로 들어도 항상 똑바로 읽히게 한다.
+                // extraRotationDegrees는 모델 입력을 "바로 세우기 위해" 크롭에 적용한 정방향
+                // 회전이므로, 화면에 그대로 붙어있는 텍스트를 사람이 보기 좋게 하려면
+                // 그 반대(역방향)로 돌려야 한다.
+                val labelRotation = -(cropInfo?.extraRotationDegrees ?: 0).toFloat()
+
                 drawContext.canvas.nativeCanvas.apply {
+                    val pivotX = pillLeft + pillW / 2f
+                    val pivotY = pillTop + pillH / 2f
+                    val rotated = labelRotation != 0f
+                    if (rotated) {
+                        save()
+                        rotate(labelRotation, pivotX, pivotY)
+                    }
+
                     val rr = android.graphics.RectF(pillLeft, pillTop, pillLeft + pillW, pillTop + pillH)
                     drawRoundRect(rr, 8f, 8f, bgPaint)
                     drawRoundRect(rr, 8f, 8f, borderPaint)
@@ -195,6 +233,8 @@ fun BoundingBoxOverlay(
                     drawText(item.label, x, textBaseline, namePaint)
                     x += nameW + gap
                     drawText(confText, x, textBaseline, confPaint)
+
+                    if (rotated) restore()
                 }
             }
         }

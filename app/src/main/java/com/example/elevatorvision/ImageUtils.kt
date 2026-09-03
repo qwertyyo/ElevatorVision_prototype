@@ -12,7 +12,11 @@ data class CenterCropInfo(
     val cropLeft: Int,
     val cropTop: Int,
     val cropSize: Int,
-    val targetSize: Int
+    val targetSize: Int,
+    // 화면은 세로로 고정돼 있지만 폰을 물리적으로 기울여 들었을 때, 모델 입력만 별도로
+    // 더 돌려준 각도(0/90/180/270). 화면 좌표계는 안 건드리므로 박스/라벨을 화면에
+    // 그릴 때 이 각도를 참고해서 보정해야 한다.
+    val extraRotationDegrees: Int = 0
 )
 
 data class ModelPrep(
@@ -63,7 +67,11 @@ object ImageUtils {
      * ✅ 모델 입력용: (회전된 원본)에서 centerCrop → 정사각 → targetSize 리사이즈
      * 그리고 그 크롭 정보도 같이 반환
      */
-    fun prepareModelInputCenterCrop(srcRotated: Bitmap, targetSize: Int): ModelPrep {
+    fun prepareModelInputCenterCrop(
+        srcRotated: Bitmap,
+        targetSize: Int,
+        extraRotationDegrees: Int = 0
+    ): ModelPrep {
         val srcW = srcRotated.width
         val srcH = srcRotated.height
         val cropSize = minOf(srcW, srcH)
@@ -71,7 +79,10 @@ object ImageUtils {
         val cropTop = (srcH - cropSize) / 2
 
         val cropped = Bitmap.createBitmap(srcRotated, cropLeft, cropTop, cropSize, cropSize)
-        val resized = Bitmap.createScaledBitmap(cropped, targetSize, targetSize, true)
+        // 화면 좌표계(cropLeft/cropTop 기준)는 그대로 두고, 모델에 넣을 정사각형만
+        // 폰의 실제 물리적 방향에 맞춰 추가로 회전시켜 항상 똑바로 선 이미지를 모델에 준다.
+        val rotatedForModel = rotateBitmap(cropped, extraRotationDegrees)
+        val resized = Bitmap.createScaledBitmap(rotatedForModel, targetSize, targetSize, true)
 
         return ModelPrep(
             input = resized,
@@ -81,7 +92,8 @@ object ImageUtils {
                 cropLeft = cropLeft,
                 cropTop = cropTop,
                 cropSize = cropSize,
-                targetSize = targetSize
+                targetSize = targetSize,
+                extraRotationDegrees = extraRotationDegrees
             )
         )
     }
