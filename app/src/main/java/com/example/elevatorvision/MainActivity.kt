@@ -347,10 +347,15 @@ private fun CameraScreen(
 
     val isCaptured = capturedFrame != null
 
+    // 부품 클릭 시 뜨는 검사기준/표준화 바텀시트가 촬영 UI(줌/셔터/손전등 등)와 겹쳐 보이지
+    // 않도록, 시트가 떠 있는 동안은 촬영 UI를 숨긴다.
+    var detailSheetVisible by remember { mutableStateOf(false) }
+
     BackHandler(enabled = isCaptured) {
         capturedFrame = null
         capturedDetections = emptyList()
         capturedCropInfo = null
+        detailSheetVisible = false
     }
 
     /* ---------- Save ---------- */
@@ -544,7 +549,8 @@ private fun CameraScreen(
                 labels = labels,
                 showInfoIcons = false,
                 enablePopup = false,
-                cropInfo = liveCropInfo
+                cropInfo = liveCropInfo,
+                onSheetVisibleChanged = { detailSheetVisible = it }
             )
 
             // 상단 레터박스 바: LIVE 상태 표시
@@ -573,60 +579,63 @@ private fun CameraScreen(
             }
 
             // 하단 레터박스 바: 상태 배지 줄 + 저장소/셔터/손전등 버튼 줄
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(Color.Black)
-                    .windowInsetsPadding(WindowInsets.systemBars)
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+            // 부품 클릭으로 뜬 바텀시트와 겹치지 않도록, 시트가 떠 있는 동안은 숨긴다.
+            if (!detailSheetVisible) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(Color.Black)
+                        .windowInsetsPadding(WindowInsets.systemBars)
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Zoom: %.1fx".format(zoomRatio), color = TextSecondary, fontSize = 12.sp)
-                    StatusPill(
-                        text = if (flashOn) "FL-ON" else "FL-OFF",
-                        icon = if (flashOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
-                        color = if (flashOn) BrandOrange else TextSecondary
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Zoom: %.1fx".format(zoomRatio), color = TextSecondary, fontSize = 12.sp)
+                        StatusPill(
+                            text = if (flashOn) "FL-ON" else "FL-OFF",
+                            icon = if (flashOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+                            color = if (flashOn) BrandOrange else TextSecondary
+                        )
+                    }
+
+                    Spacer(Modifier.height(18.dp))
+
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        CircleIconButton(
+                            icon = Icons.Filled.PhotoLibrary,
+                            contentDescription = "저장소",
+                            modifier = Modifier.align(Alignment.CenterStart),
+                            onClick = onOpenStorage
+                        )
+
+                        ShutterButton(
+                            modifier = Modifier.align(Alignment.Center),
+                            onClick = {
+                                capturedFrame = liveFrame
+                                capturedDetections = liveDetections
+                                capturedCropInfo = liveCropInfo
+                            }
+                        )
+
+                        CircleIconButton(
+                            icon = if (flashOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+                            contentDescription = "손전등",
+                            tint = if (flashOn) BrandOrange else Color.White,
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                            onClick = {
+                                flashOn = !flashOn
+                                camera?.cameraControl?.enableTorch(flashOn)
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                    HomeIndicatorBar()
                 }
-
-                Spacer(Modifier.height(18.dp))
-
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    CircleIconButton(
-                        icon = Icons.Filled.PhotoLibrary,
-                        contentDescription = "저장소",
-                        modifier = Modifier.align(Alignment.CenterStart),
-                        onClick = onOpenStorage
-                    )
-
-                    ShutterButton(
-                        modifier = Modifier.align(Alignment.Center),
-                        onClick = {
-                            capturedFrame = liveFrame
-                            capturedDetections = liveDetections
-                            capturedCropInfo = liveCropInfo
-                        }
-                    )
-
-                    CircleIconButton(
-                        icon = if (flashOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
-                        contentDescription = "손전등",
-                        tint = if (flashOn) BrandOrange else Color.White,
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                        onClick = {
-                            flashOn = !flashOn
-                            camera?.cameraControl?.enableTorch(flashOn)
-                        }
-                    )
-                }
-
-                Spacer(Modifier.height(10.dp))
-                HomeIndicatorBar()
             }
         }
 
@@ -645,7 +654,8 @@ private fun CameraScreen(
                 labels = labels,
                 showInfoIcons = true,
                 enablePopup = true,
-                cropInfo = capturedCropInfo
+                cropInfo = capturedCropInfo,
+                onSheetVisibleChanged = { detailSheetVisible = it }
             )
 
             // 상단 레터박스 바: 뒤로가기 + 타이틀 + FREEZE 배지
@@ -667,6 +677,7 @@ private fun CameraScreen(
                             capturedFrame = null
                             capturedDetections = emptyList()
                             capturedCropInfo = null
+                            detailSheetVisible = false
                         }
                     )
                     Spacer(Modifier.width(10.dp))
@@ -676,58 +687,61 @@ private fun CameraScreen(
             }
 
             // 하단 레터박스 바: 저장 버튼 2종
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(Color.Black)
-                    .windowInsetsPadding(WindowInsets.systemBars)
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // 부품 클릭으로 뜬 바텀시트와 겹치지 않도록, 시트가 떠 있는 동안은 숨긴다.
+            if (!detailSheetVisible) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(Color.Black)
+                        .windowInsetsPadding(WindowInsets.systemBars)
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    OutlinedButton(
-                        onClick = onOpenStorage,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = SurfaceDark,
-                            contentColor = Color.White
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, OutlineDark)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("저장소 보기", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    }
+                        OutlinedButton(
+                            onClick = onOpenStorage,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = SurfaceDark,
+                                contentColor = Color.White
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, OutlineDark)
+                        ) {
+                            Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("저장소 보기", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        }
 
-                    Button(
-                        onClick = {
-                            val ok = saveCaptured()
-                            Toast.makeText(
-                                context,
-                                if (ok) "저장 완료" else "저장 실패",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue)
-                    ) {
-                        Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("검사항목 저장", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = {
+                                val ok = saveCaptured()
+                                Toast.makeText(
+                                    context,
+                                    if (ok) "저장 완료" else "저장 실패",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandBlue)
+                        ) {
+                            Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("검사항목 저장", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
+                    Spacer(Modifier.height(12.dp))
+                    HomeIndicatorBar()
                 }
-                Spacer(Modifier.height(12.dp))
-                HomeIndicatorBar()
             }
         }
     }

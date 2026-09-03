@@ -48,7 +48,8 @@ fun BoundingBoxOverlay(
     maxShow: Int = 20,
     showInfoIcons: Boolean,
     enablePopup: Boolean,
-    cropInfo: CenterCropInfo? = null
+    cropInfo: CenterCropInfo? = null,
+    onSheetVisibleChanged: (Boolean) -> Unit = {}
 ) {
     BoxWithConstraints(modifier = modifier) {
         val context = LocalContext.current
@@ -161,6 +162,11 @@ fun BoundingBoxOverlay(
         var showStandardsFor by remember { mutableStateOf<String?>(null) }
         var showLawFor by remember { mutableStateOf<String?>(null) }
         var alertDialogContent by remember { mutableStateOf<DialogContent?>(null) }
+
+        // 부품 선택/검사기준/표준화 바텀시트가 하나라도 떠 있으면 촬영 UI(줌/셔터/손전등 등)와
+        // 겹쳐 보이므로, 호출한 쪽(CameraScreen)이 그 UI를 숨길 수 있게 알려준다.
+        val anySheetVisible = selected != null || showStandardsFor != null || showLawFor != null
+        LaunchedEffect(anySheetVisible) { onSheetVisibleChanged(anySheetVisible) }
 
         // 1. 인식 박스: 모서리 브라켓 + 라벨 필
         Canvas(Modifier.matchParentSize()) {
