@@ -15,6 +15,10 @@ class YoloDetector(context: Context) {
 
     private val labels: List<String>
 
+    // close() 이후에 들어온 추론 요청은 네이티브 크래시 대신 빈 결과로 처리한다.
+    @Volatile
+    private var closed = false
+
     init {
         val modelBuffer = loadModelFile(context, "yolov5s-fp16.tflite")
         interpreter = Interpreter(modelBuffer)
@@ -29,7 +33,9 @@ class YoloDetector(context: Context) {
     }
 
     /** YOLO 추론: 반환 타입은 DetectionResult만 */
+    @Synchronized
     fun detect(bitmap: Bitmap): List<DetectionResult> {
+        if (closed) return emptyList()
         val inputBuffer = bitmapToFloatBuffer(bitmap)
 
         val output = Array(1) { Array(25200) { FloatArray(10) } }
@@ -182,5 +188,13 @@ class YoloDetector(context: Context) {
     }
     fun getLabelName(classId: Int): String {
         return labels.getOrNull(classId) ?: "Unknown"
+    }
+
+    /** 인터프리터의 네이티브 메모리 해제. 진행 중인 detect()가 끝난 뒤에 실행된다(@Synchronized). */
+    @Synchronized
+    fun close() {
+        if (closed) return
+        closed = true
+        interpreter.close()
     }
 }

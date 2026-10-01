@@ -65,6 +65,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.elevatorvision.ui.BoundingBoxOverlay
 import com.example.elevatorvision.ui.CircleIconButton
 import com.example.elevatorvision.ui.HomeIndicatorBar
+import com.example.elevatorvision.ui.LabeledCircleIconButton
 import com.example.elevatorvision.ui.ShutterButton
 import com.example.elevatorvision.ui.StatusPill
 import com.example.elevatorvision.ui.theme.BrandBlue
@@ -261,6 +262,13 @@ private fun StartScreen(
 
 /* ======================= Camera ======================= */
 
+// 한 프레임의 사진·인식 결과·크롭 정보를 한 덩어리로 묶어 둔다. 셔터는 항상 같은 프레임의 세 값을 함께 가져간다.
+private data class LiveResult(
+    val frame: Bitmap,
+    val detections: List<DetectionResult>,
+    val cropInfo: CenterCropInfo
+)
+
 @OptIn(ExperimentalGetImage::class)
 @Composable
 private fun CameraScreen(
@@ -299,6 +307,8 @@ private fun CameraScreen(
 
     /* ---------- 카메라 컨트롤 (손전등, 줌, 포커스용) ---------- */
     var camera by remember { mutableStateOf<Camera?>(null) }
+    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    var imageAnalysis by remember { mutableStateOf<ImageAnalysis?>(null) }
     var previewViewRef by remember { mutableStateOf<PreviewView?>(null) }
     var flashOn by remember { mutableStateOf(false) }
     var zoomRatio by remember { mutableStateOf(1f) }
@@ -311,7 +321,12 @@ private fun CameraScreen(
     // 전용 백그라운드 스레드에서 실행해서 메인 스레드(=Compose 렌더링, 제스처 처리)를 막지 않게 한다.
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     DisposableEffect(Unit) {
-        onDispose { analysisExecutor.shutdown() }
+        onDispose {
+            // 카메라 화면에 들어올 때마다 모델을 새로 로드하므로, 떠날 때 닫지 않으면 네이티브
+            // 메모리가 계속 쌓인다. 진행 중인 추론이 끝난 뒤 닫히도록 같은 분석 스레드에 넣는다.
+            analysisExecutor.execute { yoloDetector.close() }
+            analysisExecutor.shutdown()
+        }
     }
 
     // 화면(UI)은 세로로 완전히 고정한다(매니페스트 screenOrientation="portrait").
@@ -336,9 +351,7 @@ private fun CameraScreen(
     }
 
     /* ---------- LIVE ---------- */
-    var liveFrame by remember { mutableStateOf<Bitmap?>(null) }
-    var liveDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
-    var liveCropInfo by remember { mutableStateOf<CenterCropInfo?>(null) }
+    var liveResult by remember { mutableStateOf<LiveResult?>(null) }
 
     /* ---------- CAPTURED ---------- */
     var capturedFrame by remember { mutableStateOf<Bitmap?>(null) }
@@ -446,7 +459,6 @@ private fun CameraScreen(
                             val bmp = ImageUtils.imageProxyToBitmap(image)
                             val baseRotationDegrees = image.imageInfo.rotationDegrees
                             val rotated = ImageUtils.rotateBitmap(bmp, baseRotationDegrees)
-                            liveFrame = rotated
 
                             // 화면(프리뷰/오버레이)이 실제로 그려지는 기준(baseRotationDegrees)은
                             // 그대로 두고, "지금 폰을 물리적으로 얼마나 더 돌려 잡고 있는지"만큼만
@@ -463,8 +475,10 @@ private fun CameraScreen(
                                 640,
                                 extraRotationDegrees
                             )
-                            liveCropInfo = prep.cropInfo
-                            liveDetections = yoloDetector.detect(prep.input)
+                            val detections = yoloDetector.detect(prep.input)
+                            // 사진·박스·크롭 정보를 추론이 끝난 뒤 한 번에 갱신한다. 따로 갱신하면
+                            // 추론 도중 셔터를 눌렀을 때 "새 프레임 사진 + 이전 프레임 박스"가 저장된다.
+                            liveResult = LiveResult(rotated, detections, prep.cropInfo)
                         } finally {
                             image.close()
                         }
@@ -478,6 +492,13 @@ private fun CameraScreen(
                         analysis
                     )
 
+                    cameraProvider = provider
+                    imageAnalysis = analysis
+
+                    // 캡처 화면에서 돌아오면 카메라를 다시 연결하면서 손전등이 꺼지므로,
+                    // 켜둔 상태였다면 다시 켜서 화면 표시(FL-ON)와 맞춘다.
+                    if (flashOn) camera?.cameraControl?.enableTorch(true)
+
                     camera?.cameraInfo?.zoomState?.value?.let { zs ->
                         minZoomRatio = zs.minZoomRatio
                         maxZoomRatio = zs.maxZoomRatio
@@ -488,6 +509,18 @@ private fun CameraScreen(
                     previewView
                 }
             )
+
+            // 카메라는 Activity 수명에 묶여 있어서, 직접 연결을 끊지 않으면 캡처 화면이나
+            // 저장소 화면으로 넘어가도 카메라와 YOLO 분석이 뒤에서 계속 돈다.
+            DisposableEffect(Unit) {
+                onDispose {
+                    imageAnalysis?.clearAnalyzer()
+                    cameraProvider?.unbindAll()
+                    imageAnalysis = null
+                    camera = null
+                    previewViewRef = null
+                }
+            }
 
             // 핀치 줌(2손가락) + 탭 포커스 제스처 레이어 — 카메라 프리뷰 위, 인식 박스 아래
             Box(
@@ -545,11 +578,11 @@ private fun CameraScreen(
 
             BoundingBoxOverlay(
                 modifier = Modifier.fillMaxSize(),
-                detections = liveDetections,
+                detections = liveResult?.detections ?: emptyList(),
                 labels = labels,
                 showInfoIcons = false,
                 enablePopup = false,
-                cropInfo = liveCropInfo,
+                cropInfo = liveResult?.cropInfo,
                 onSheetVisibleChanged = { detailSheetVisible = it }
             )
 
@@ -598,16 +631,20 @@ private fun CameraScreen(
                         StatusPill(
                             text = if (flashOn) "FL-ON" else "FL-OFF",
                             icon = if (flashOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
-                            color = if (flashOn) BrandOrange else TextSecondary
+                            color = if (flashOn) BrandOrange else TextSecondary,
+                            onClick = {
+                                flashOn = !flashOn
+                                camera?.cameraControl?.enableTorch(flashOn)
+                            }
                         )
                     }
 
                     Spacer(Modifier.height(18.dp))
 
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        CircleIconButton(
+                        LabeledCircleIconButton(
                             icon = Icons.Filled.PhotoLibrary,
-                            contentDescription = "저장소",
+                            label = "저장소",
                             modifier = Modifier.align(Alignment.CenterStart),
                             onClick = onOpenStorage
                         )
@@ -615,9 +652,12 @@ private fun CameraScreen(
                         ShutterButton(
                             modifier = Modifier.align(Alignment.Center),
                             onClick = {
-                                capturedFrame = liveFrame
-                                capturedDetections = liveDetections
-                                capturedCropInfo = liveCropInfo
+                                val r = liveResult
+                                if (r != null) {
+                                    capturedFrame = r.frame
+                                    capturedDetections = r.detections
+                                    capturedCropInfo = r.cropInfo
+                                }
                             }
                         )
 

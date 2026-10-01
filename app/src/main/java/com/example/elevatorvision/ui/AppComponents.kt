@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -93,10 +94,12 @@ fun CircleIconButton(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 48.dp,
     tint: Color = Color.White,
+    interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit
 ) {
     IconButton(
         onClick = onClick,
+        interactionSource = interactionSource,
         modifier = modifier
             .size(size)
             .clip(CircleShape)
@@ -109,6 +112,63 @@ fun CircleIconButton(
             tint = tint,
             modifier = Modifier.size(size * 0.42f)
         )
+    }
+}
+
+/**
+ * 아래에 짧은 라벨이 붙는 CircleIconButton (예: 라이브 화면의 "저장소").
+ * 라벨은 레이아웃 크기에 넣지 않고 버튼 아래로만 그려서, 같은 줄의 셔터·손전등 버튼과
+ * 아이콘 중심 높이가 그대로 맞는다. (Compose는 부모 영역 밖에 그려진 자식도 터치를 받으므로
+ * 라벨을 눌러도 동작한다.) 라벨을 누르면 버튼과 같은 interactionSource로 동그란 아이콘에
+ * 눌림 효과가 나서 하나의 버튼처럼 느껴진다.
+ */
+@Composable
+fun LabeledCircleIconButton(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 48.dp,
+    tint: Color = Color.White,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Layout(
+        modifier = modifier,
+        content = {
+            CircleIconButton(
+                icon = icon,
+                contentDescription = label,
+                size = size,
+                tint = tint,
+                interactionSource = interactionSource,
+                onClick = onClick
+            )
+            Text(
+                label,
+                color = TextSecondary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.3.sp,
+                // 글자만으로는 터치 영역이 너무 작아서 안쪽 여백으로 눌리는 범위를 넓힌다.
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+    ) { measurables, constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val button = measurables[0].measure(loose)
+        val text = measurables[1].measure(loose)
+        // 라벨의 위쪽 안쪽 여백(4dp)이 그대로 버튼과 글자 사이 간격이 된다.
+        layout(button.width, button.height) {
+            button.placeRelative(0, 0)
+            text.placeRelative((button.width - text.width) / 2, button.height)
+        }
     }
 }
 
