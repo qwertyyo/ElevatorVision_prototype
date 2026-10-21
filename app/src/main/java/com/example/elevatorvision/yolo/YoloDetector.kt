@@ -8,6 +8,13 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.max
 
+/**
+ * YOLO11 TFLite 추론 (Ultralytics → onnx2tf 변환본).
+ * 입력 [1,640,640,3] float32 RGB 0~1, 출력 [1, 4+클래스수, 8400]:
+ * 채널 0~3 = cx,cy,w,h (640 입력 기준 픽셀), 4~ = 클래스 점수(sigmoid 적용됨, objectness 없음), NMS는 앱에서.
+ * 자세한 명세: D:\elevator_dataset\runs\rf_v3_yolo11s\TFLITE_SPEC.md
+ * 입력은 ImageUtils가 만든 정사각형 크롭이라 레터박스 패딩 없이 리사이즈만 하면 학습 전처리와 같다.
+ */
 class YoloDetector(context: Context) {
 
     private val interpreter: Interpreter
@@ -15,21 +22,33 @@ class YoloDetector(context: Context) {
 
     private val labels: List<String>
 
+    // 출력 텐서 모양에서 읽는다 (클래스 수가 바뀌어도 코드 수정 불필요)
+    private val numChannels: Int
+    private val numAnchors: Int
+    private val numClasses: Int
+
     // close() 이후에 들어온 추론 요청은 네이티브 크래시 대신 빈 결과로 처리한다.
     @Volatile
     private var closed = false
 
     init {
-        val modelBuffer = loadModelFile(context, "yolov5s-fp16.tflite")
+        val modelBuffer = loadModelFile(context, MODEL_FILE)
         interpreter = Interpreter(modelBuffer)
-
-
 
         labels = context.assets.open("labels.txt")
             .bufferedReader()
             .readLines()
+            .filter { it.isNotBlank() }
 
-        Log.d("YOLO", "YOLO Interpreter initialized")
+        val shape = interpreter.getOutputTensor(0).shape()   // [1, 4+nc, 8400]
+        numChannels = shape[1]
+        numAnchors = shape[2]
+        numClasses = numChannels - 4
+        if (numClasses != labels.size) {
+            Log.w("YOLO", "모델 클래스 수($numClasses)와 labels.txt 줄 수(${labels.size})가 다름")
+        }
+
+        Log.d("YOLO", "YOLO11 Interpreter initialized: classes=$numClasses anchors=$numAnchors")
     }
 
     /** YOLO 추론: 반환 타입은 DetectionResult만 */
@@ -38,37 +57,31 @@ class YoloDetector(context: Context) {
         if (closed) return emptyList()
         val inputBuffer = bitmapToFloatBuffer(bitmap)
 
-        val output = Array(1) { Array(25200) { FloatArray(10) } }
+        val output = Array(1) { Array(numChannels) { FloatArray(numAnchors) } }
         interpreter.run(inputBuffer, output)
+        val out = output[0]   // out[채널][앵커]
 
         val raw = mutableListOf<DetectionResult>()
 
-        // 1) score threshold로 1차 필터
-        val scoreThreshold = 0.6f
+        // 1) score threshold로 1차 필터 (클래스 점수 최댓값 = 신뢰도)
+        val scoreThreshold = 0.5f
 
-        for (i in 0 until 25200) {
-            val row = output[0][i]
-
-            val objConf = row[4]
-            if (objConf < scoreThreshold) continue
-
-            var maxClassScore = 0f
+        for (i in 0 until numAnchors) {
+            var score = 0f
             var classId = -1
-            for (c in 5 until 10) {
-                val s = row[c]
-                if (s > maxClassScore) {
-                    maxClassScore = s
-                    classId = c - 5
+            for (c in 0 until numClasses) {
+                val s = out[4 + c][i]
+                if (s > score) {
+                    score = s
+                    classId = c
                 }
             }
-
-            val score = objConf * maxClassScore
             if (score < scoreThreshold) continue
 
-            val cx = row[0] * inputSize
-            val cy = row[1] * inputSize
-            val w = row[2] * inputSize
-            val h = row[3] * inputSize
+            val cx = out[0][i]
+            val cy = out[1][i]
+            val w = out[2][i]
+            val h = out[3][i]
 
             var left = cx - w / 2f
             var top = cy - h / 2f
@@ -99,7 +112,7 @@ class YoloDetector(context: Context) {
 
         // 3) NMS 적용 (겹치는 박스 제거)
         val nmsThreshold = 0.45f
-        val maxDetections = 10
+        val maxDetections = 20
 
         return nonMaxSuppression(
             boxes = raw,
@@ -196,5 +209,9 @@ class YoloDetector(context: Context) {
         if (closed) return
         closed = true
         interpreter.close()
+    }
+
+    companion object {
+        private const val MODEL_FILE = "yolo11s_elevator_v1_fp16.tflite"
     }
 }

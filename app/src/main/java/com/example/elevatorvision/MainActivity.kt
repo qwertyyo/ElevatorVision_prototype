@@ -62,6 +62,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.elevatorvision.kijun.KijunSiteCache
 import com.example.elevatorvision.ui.BoundingBoxOverlay
 import com.example.elevatorvision.ui.CircleIconButton
 import com.example.elevatorvision.ui.HomeIndicatorBar
@@ -129,6 +130,13 @@ private sealed class Screen {
 @Composable
 private fun AppRoot() {
     var screen by remember { mutableStateOf<Screen>(Screen.Start) }
+
+    // 검사기준 통합검색 오프라인 저장본: 앱을 켤 때 Wi-Fi면 사이트 본문·그림을 미리 받아 둔다
+    // (모바일 데이터에서는 받지 않고, 열어 본 화면만 그때그때 저장된다)
+    val appContext = LocalContext.current.applicationContext
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) { KijunSiteCache(appContext).prefetchAll() }
+    }
 
     BackHandler(enabled = screen != Screen.Start) {
         screen = when (val s = screen) {

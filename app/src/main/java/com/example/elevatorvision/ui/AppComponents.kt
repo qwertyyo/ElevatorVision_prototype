@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -220,6 +219,7 @@ fun BottomSheetScaffold(
     title: String,
     modifier: Modifier = Modifier,
     onClose: () -> Unit = onDismiss,
+    startExpanded: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -228,7 +228,7 @@ fun BottomSheetScaffold(
         val peekHeightPx = remember(fullHeightPx) { fullHeightPx * 0.55f }
         val expandedHeightPx = remember(fullHeightPx) { fullHeightPx * 0.92f }
 
-        var sheetHeightPx by remember { mutableStateOf(peekHeightPx) }
+        var sheetHeightPx by remember { mutableStateOf(if (startExpanded) expandedHeightPx else peekHeightPx) }
         val animatedHeightPx by animateFloatAsState(targetValue = sheetHeightPx, label = "sheetHeight")
 
         AnimatedVisibility(
@@ -344,52 +344,6 @@ fun BottomSheetScaffold(
     }
 }
 
-/**
- * 바텀시트 안에서 쓰는 리스트형 메뉴 행 (아이콘 뱃지 + 라벨 + 화살표).
- * 검사기준 / 표준화 / 검사가이드 선택, 향후 조작반·헤더 하위부품 선택에도 재사용.
- */
-@Composable
-fun SheetMenuRow(
-    icon: ImageVector,
-    label: String,
-    accentColor: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = 0.04f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(accentColor.copy(alpha = 0.16f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(19.dp))
-        }
-        Spacer(Modifier.width(14.dp))
-        Text(
-            label,
-            color = Color.White,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(1f)
-        )
-        Icon(
-            Icons.Filled.ChevronRight,
-            contentDescription = null,
-            tint = TextTertiary,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-    Spacer(Modifier.height(8.dp))
-}
 
 /**
  * 화면 하단의 장식용 홈 인디케이터 바 (레퍼런스 디자인의 통일된 룩을 위한 장식 요소).

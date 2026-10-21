@@ -1,0 +1,1449 @@
+{
+ "source": "qwertyyo/kijun yolo/ (data.yaml + 엘리베이터_객체인식_클래스_1차.xlsx)",
+ "classes": [
+  {
+   "id": 0,
+   "key": "traction_machine",
+   "name_ko": "권상기(구동기)",
+   "location": "기계실·구동부",
+   "query": "권상기",
+   "aliases": [
+    "권상기",
+    "구동기",
+    "트랙션머신",
+    "전동기",
+    "모터"
+   ],
+   "clauses": [
+    {
+     "num": "13.1",
+     "title": "엘리베이터 구동기 및 관련 설비 — 일반사항"
+    },
+    {
+     "num": "13.2.1",
+     "title": "권상 구동 및 포지티브 구동 엘리베이터의 구동기 — 일반사항"
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "key": "brake",
+   "name_ko": "브레이크(제동기)",
+   "location": "기계실·구동부",
+   "query": "브레이크",
+   "aliases": [
+    "브레이크",
+    "제동기",
+    "플런저",
+    "라이닝"
+   ],
+   "clauses": [
+    {
+     "num": "13.2.2.1",
+     "title": "브레이크 시스템 — 일반사항"
+    },
+    {
+     "num": "13.2.2.2",
+     "title": "전자-기계 브레이크"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "key": "traction_sheave",
+   "name_ko": "구동 도르래(권상도르래)",
+   "location": "기계실·구동부",
+   "query": "권상도르래",
+   "aliases": [
+    "권상도르래",
+    "구동기 도르래",
+    "쉬브",
+    "메인시브"
+   ],
+   "clauses": [
+    {
+     "num": "9.3",
+     "title": "로프(벨트) 권상"
+    },
+    {
+     "num": "6.6.3.1",
+     "title": "승강로에 있는 권상도르래"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "key": "suspension_rope",
+   "name_ko": "주로프(매다는 장치)",
+   "location": "기계실·구동부",
+   "query": "주로프",
+   "aliases": [
+    "주로프",
+    "와이어로프",
+    "현수로프",
+    "매다는 장치",
+    "스트랜드"
+   ],
+   "clauses": [
+    {
+     "num": "9.1",
+     "title": "매다는 장치(현수)"
+    },
+    {
+     "num": "Ⅳ",
+     "title": "로프의 마모 및 파손상태"
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "key": "rope_termination",
+   "name_ko": "로프 단말(소켓·클립)",
+   "location": "기계실·구동부",
+   "query": "소켓",
+   "aliases": [
+    "소켓",
+    "클립",
+    "로프 단말",
+    "끝부분의 고정"
+   ],
+   "clauses": [
+    {
+     "num": "9.2",
+     "title": "매다는 장치(현수), 보상수단 및 관련 보호수단 — 권상 도르래‧풀리 또는 드럼과 로프(…"
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "key": "governor",
+   "name_ko": "과속조절기(조속기)",
+   "location": "기계실·구동부",
+   "query": "과속조절기",
+   "aliases": [
+    "과속조절기",
+    "조속기",
+    "거버너",
+    "가바나"
+   ],
+   "clauses": [
+    {
+     "num": "10.2.2.1.1",
+     "title": "과속조절기에 의한 작동 — 일반사항"
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "key": "rope_brake",
+   "name_ko": "상승과속방지장치(로프브레이크)",
+   "location": "기계실·구동부",
+   "query": "상승과속방지",
+   "aliases": [
+    "상승과속방지",
+    "로프브레이크",
+    "로프 브레이크",
+    "ACOP"
+   ],
+   "clauses": [
+    {
+     "num": "10.6",
+     "title": "카의 상승과속방지장치"
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "key": "access_door",
+   "name_ko": "출입문·비상문·점검문(기계실·승강로·피트)",
+   "location": "기계실·구동부",
+   "query": "출입문",
+   "aliases": [
+    "출입문",
+    "점검문",
+    "비상문"
+   ],
+   "clauses": [
+    {
+     "num": "6.3",
+     "title": "출입문 및 비상문 – 점검문"
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "key": "hydraulic_power_unit",
+   "name_ko": "유압 파워유니트(탱크·펌프·밸브)",
+   "location": "기계실(유압)",
+   "query": "파워유니트",
+   "aliases": [
+    "파워유니트",
+    "파워 유니트",
+    "탱크",
+    "펌프"
+   ],
+   "clauses": [
+    {
+     "num": "6.1.9.4",
+     "title": "벽, 바닥 및 천장의 재질 — 유압식 엘리베이터의 경우, 파워 유니…"
+    },
+    {
+     "num": "13.3.7",
+     "title": "탱크"
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "key": "hydraulic_pipe",
+   "name_ko": "압력배관·호스",
+   "location": "기계실(유압)",
+   "query": "배관",
+   "aliases": [
+    "배관",
+    "호스"
+   ],
+   "clauses": [
+    {
+     "num": "13.3.3",
+     "title": "배관"
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "key": "hand_pump",
+   "name_ko": "수동펌프",
+   "location": "기계실(유압)",
+   "query": "수동-펌프",
+   "aliases": [
+    "수동-펌프",
+    "수동펌프",
+    "수동 펌프"
+   ],
+   "clauses": [
+    {
+     "num": "13.3.9.2",
+     "title": "카의 상승 움직임"
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "key": "governor_rope",
+   "name_ko": "과속조절기 로프",
+   "location": "승강로",
+   "query": "과속조절기 로프",
+   "aliases": [
+    "과속조절기 로프",
+    "조속기로프",
+    "조속기 로프"
+   ],
+   "clauses": [
+    {
+     "num": "10.2.2.1.3",
+     "title": "과속조절기 로프"
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "key": "guide_rail",
+   "name_ko": "주행안내 레일",
+   "location": "승강로",
+   "query": "주행안내 레일",
+   "aliases": [
+    "주행안내 레일",
+    "가이드레일",
+    "가이드 레일",
+    "레일"
+   ],
+   "clauses": [
+    {
+     "num": "11.1",
+     "title": "카, 균형추 또는 평형추의 주행안내"
+    },
+    {
+     "num": "11.2.1.1",
+     "title": "일반사항 — 주행안내 레일, 주행안내 레일의 연결…"
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "key": "guide_shoe",
+   "name_ko": "카·균형추 가이드슈(가이드롤러)",
+   "location": "승강로",
+   "query": "가이드 슈",
+   "aliases": [
+    "가이드 슈",
+    "가이드슈",
+    "가이드롤러",
+    "가이드 롤러"
+   ],
+   "clauses": [
+    {
+     "num": "13.3.1.2",
+     "title": "일반사항 — 여러 개의 잭이 있는 경우, 잭은 압…"
+    },
+    {
+     "num": "11.2.1.2",
+     "title": "일반사항 — 엘리베이터의 안전한 작동을 보장하기…"
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "key": "safety_gear",
+   "name_ko": "추락방지안전장치(세이프티)",
+   "location": "승강로",
+   "query": "추락방지안전장치",
+   "aliases": [
+    "추락방지안전장치",
+    "비상정지장치",
+    "세이프티"
+   ],
+   "clauses": [
+    {
+     "num": "10.2.1.1",
+     "title": "추락방지안전장치 — 일반사항"
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "key": "slack_rope_switch",
+   "name_ko": "로프·체인 이완감지 스위치",
+   "location": "승강로",
+   "query": "이완",
+   "aliases": [
+    "이완",
+    "느슨",
+    "슬랙"
+   ],
+   "clauses": [
+    {
+     "num": "9.5.3",
+     "title": "매다는 장치 사이의 하중 분산 — 매다는 장치가 비정상적으로 늘어난 경…"
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "key": "limit_switch",
+   "name_ko": "리미트 스위치(파이널 포함)",
+   "location": "승강로",
+   "query": "리미트 스위치",
+   "aliases": [
+    "리미트 스위치",
+    "리미트스위치",
+    "파이널 리미트"
+   ],
+   "clauses": [
+    {
+     "num": "16.2",
+     "title": "파이널 리미트 스위치"
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "key": "hydraulic_jack",
+   "name_ko": "유압잭(실린더·램)",
+   "location": "승강로(유압)",
+   "query": "잭",
+   "aliases": [
+    "잭",
+    "실린더",
+    "램"
+   ],
+   "clauses": [
+    {
+     "num": "13.3.2",
+     "title": "잭"
+    }
+   ]
+  },
+  {
+   "id": 18,
+   "key": "rupture_valve",
+   "name_ko": "럽처밸브",
+   "location": "승강로(유압)",
+   "query": "럽처밸브",
+   "aliases": [
+    "럽처밸브",
+    "럽쳐밸브"
+   ],
+   "clauses": [
+    {
+     "num": "10.3",
+     "title": "럽처밸브"
+    }
+   ]
+  },
+  {
+   "id": 19,
+   "key": "pawl_device",
+   "name_ko": "멈춤쇠 장치(유압)",
+   "location": "승강로(유압)",
+   "query": "멈춤 쇠",
+   "aliases": [
+    "멈춤 쇠",
+    "멈춤쇠"
+   ],
+   "clauses": [
+    {
+     "num": "10.5",
+     "title": "멈춤 쇠 장치"
+    }
+   ]
+  },
+  {
+   "id": 20,
+   "key": "landing_door_lock",
+   "name_ko": "승강장문 잠금장치(도어록·인터록)",
+   "location": "승강로(승강장문 뒤)",
+   "query": "승강장문 잠금",
+   "aliases": [
+    "승강장문 잠금",
+    "도어록",
+    "도어락",
+    "인터록",
+    "잠금장치",
+    "승강장문의 닫힘",
+    "도어스위치"
+   ],
+   "clauses": [
+    {
+     "num": "7.9.1",
+     "title": "승강장문 잠금장치"
+    },
+    {
+     "num": "7.9.4",
+     "title": "승강장문의 닫힘을 입증하는 전기안전장치"
+    }
+   ]
+  },
+  {
+   "id": 21,
+   "key": "door_hanger",
+   "name_ko": "행거·행거롤러",
+   "location": "승강로(승강장문 뒤)",
+   "query": "행거",
+   "aliases": [
+    "행거"
+   ],
+   "clauses": [
+    {
+     "num": "7.3.2.2",
+     "title": "출입문 안내수단 — 수평 개폐식 승강장문 및 카문은 상부…"
+    },
+    {
+     "num": "7.11.1",
+     "title": "여러 문짝이 기계적으로 연결된 개폐식 승강장문 — 개폐식 승강장문이 기계적으로 직접 연…"
+    }
+   ]
+  },
+  {
+   "id": 22,
+   "key": "door_link_rope",
+   "name_ko": "도어 연동로프",
+   "location": "승강로(승강장문 뒤)",
+   "query": "연동",
+   "aliases": [
+    "연동로프",
+    "연동 로프",
+    "기계적으로 연결",
+    "연동"
+   ],
+   "clauses": [
+    {
+     "num": "7.11",
+     "title": "여러 문짝이 기계적으로 연결된 개폐식 승강장문"
+    }
+   ]
+  },
+  {
+   "id": 23,
+   "key": "door_closer",
+   "name_ko": "도어클로저",
+   "location": "승강로(승강장문 뒤)",
+   "query": "클로저",
+   "aliases": [
+    "클로저",
+    "무게추 또는 스프링",
+    "자동 닫힘"
+   ],
+   "clauses": [
+    {
+     "num": "7.9.3.4",
+     "title": "비상잠금해제 — 승강장문이 카문에 의해 작동되는 경우…"
+    }
+   ]
+  },
+  {
+   "id": 24,
+   "key": "toe_guard",
+   "name_ko": "승강장문 문턱 아랫부분 수직면(페셔플레이트·토가드)",
+   "location": "승강로(승강장문 뒤)",
+   "query": "문턱 아랫부분",
+   "aliases": [
+    "문턱 아랫부분",
+    "페셔",
+    "토가드"
+   ],
+   "clauses": [
+    {
+     "num": "6.5.3.2",
+     "title": "카 출입구와 마주하는 승강로 벽 및 승강장문의 구조 — 각 승강장문의 문턱 아랫부분은 다음과…"
+    }
+   ]
+  },
+  {
+   "id": 25,
+   "key": "inspection_box",
+   "name_ko": "점검운전 조작반",
+   "location": "카 상부·피트",
+   "query": "점검운전 조작반",
+   "aliases": [
+    "점검운전 조작반",
+    "점검운전",
+    "인스펙션"
+   ],
+   "clauses": [
+    {
+     "num": "16.1.5.2.4",
+     "title": "점검운전 조작반"
+    },
+    {
+     "num": "8.8",
+     "title": "카 상부의 설비"
+    }
+   ]
+  },
+  {
+   "id": 26,
+   "key": "stop_switch",
+   "name_ko": "정지장치(정지스위치)",
+   "location": "카 상부·피트",
+   "query": "정지장치",
+   "aliases": [
+    "정지장치",
+    "정지스위치",
+    "정지 스위치",
+    "비상정지 버튼"
+   ],
+   "clauses": [
+    {
+     "num": "16.1.11",
+     "title": "정지장치"
+    }
+   ]
+  },
+  {
+   "id": 27,
+   "key": "door_operator",
+   "name_ko": "도어머신(문 개폐장치)",
+   "location": "카 상부·피트",
+   "query": "도어머신",
+   "aliases": [
+    "도어머신",
+    "개폐장치",
+    "도어개폐장치"
+   ],
+   "clauses": [
+    {
+     "num": "7.15.1",
+     "title": "카문의 개방 — 엘리베이터가 어떤 이유로 인해 잠금해…"
+    }
+   ]
+  },
+  {
+   "id": 28,
+   "key": "car_door_lock",
+   "name_ko": "카문 잠금장치",
+   "location": "카 상부·피트",
+   "query": "카문 잠금",
+   "aliases": [
+    "카문 잠금",
+    "카 문 잠금",
+    "카도어록",
+    "카 도어록"
+   ],
+   "clauses": [
+    {
+     "num": "7.9.2",
+     "title": "카문 잠금장치"
+    }
+   ]
+  },
+  {
+   "id": 29,
+   "key": "car_door_switch",
+   "name_ko": "카문 닫힘 스위치(게이트 스위치)",
+   "location": "카 상부·피트",
+   "query": "카문의 닫힘",
+   "aliases": [
+    "카문의 닫힘",
+    "카 문 닫힘",
+    "카문 스위치",
+    "게이트 스위치"
+   ],
+   "clauses": [
+    {
+     "num": "7.13",
+     "title": "카문의 닫힘을 입증하는 전기안전장치"
+    }
+   ]
+  },
+  {
+   "id": 30,
+   "key": "buffer",
+   "name_ko": "완충기",
+   "location": "카 상부·피트",
+   "query": "완충기",
+   "aliases": [
+    "완충기",
+    "버퍼"
+   ],
+   "clauses": [
+    {
+     "num": "12.1",
+     "title": "카 및 균형추 완충기"
+    }
+   ]
+  },
+  {
+   "id": 31,
+   "key": "landing_door",
+   "name_ko": "승강장문",
+   "location": "승강장",
+   "query": "승강장문",
+   "aliases": [
+    "승강장문",
+    "승강장 문",
+    "홀도어"
+   ],
+   "clauses": [
+    {
+     "num": "7.1",
+     "title": "승강장문 및 카문 — 일반사항"
+    }
+   ]
+  },
+  {
+   "id": 32,
+   "key": "door_shoe",
+   "name_ko": "문 가이드슈(도어슈)",
+   "location": "승강장·카",
+   "query": "가이드슈",
+   "aliases": [
+    "가이드슈",
+    "가이드 슈",
+    "도어슈",
+    "안내수단"
+   ],
+   "clauses": [
+    {
+     "num": "7.3.2",
+     "title": "출입문 안내수단"
+    }
+   ]
+  },
+  {
+   "id": 33,
+   "key": "apron",
+   "name_ko": "에이프런",
+   "location": "승강장·카",
+   "query": "에이프런",
+   "aliases": [
+    "에이프런",
+    "에이프론"
+   ],
+   "clauses": [
+    {
+     "num": "8.5",
+     "title": "에이프런"
+    }
+   ]
+  },
+  {
+   "id": 34,
+   "key": "vision_panel",
+   "name_ko": "전망창(방범창)",
+   "location": "승강장·카",
+   "query": "전망창",
+   "aliases": [
+    "전망창",
+    "투명유리창",
+    "방범창"
+   ],
+   "clauses": [
+    {
+     "num": "7.7.2.2",
+     "title": "<<카 있음>> 신호 표시 — 카문이 자동이 아니고 카가 승강장에서…"
+    }
+   ]
+  },
+  {
+   "id": 35,
+   "key": "load_weighing_device",
+   "name_ko": "과부하감지장치(하중검출)",
+   "location": "카",
+   "query": "과부하",
+   "aliases": [
+    "과부하"
+   ],
+   "clauses": [
+    {
+     "num": "16.1.2",
+     "title": "부하 제어"
+    }
+   ]
+  },
+  {
+   "id": 36,
+   "key": "car_door",
+   "name_ko": "카문",
+   "location": "카",
+   "query": "카문",
+   "aliases": [
+    "카문",
+    "카 문",
+    "카도어"
+   ],
+   "clauses": [
+    {
+     "num": "7.1",
+     "title": "승강장문 및 카문 — 일반사항"
+    }
+   ]
+  },
+  {
+   "id": 37,
+   "key": "cop",
+   "name_ko": "카 조작반(COP)",
+   "location": "카",
+   "query": "조작반",
+   "aliases": [
+    "조작반",
+    "운전반",
+    "COP"
+   ],
+   "clauses": [
+    {
+     "num": "17.1.4",
+     "title": "이용자 조작설비"
+    }
+   ]
+  },
+  {
+   "id": 38,
+   "key": "door_open_button",
+   "name_ko": "문열림 버튼",
+   "location": "카",
+   "query": "열림버튼",
+   "aliases": [
+    "열림버튼",
+    "열림 버튼",
+    "열림 누름버튼"
+   ],
+   "clauses": [
+    {
+     "num": "7.6.3",
+     "title": "닫힌 문의 재-개방"
+    }
+   ]
+  },
+  {
+   "id": 39,
+   "key": "emergency_call",
+   "name_ko": "비상통화장치(인터폰·비상버튼)",
+   "location": "카",
+   "query": "비상통화",
+   "aliases": [
+    "비상통화",
+    "인터폰",
+    "비상벨"
+   ],
+   "clauses": [
+    {
+     "num": "16.3",
+     "title": "비상통화장치 및 내부통화시스템"
+    }
+   ]
+  },
+  {
+   "id": 40,
+   "key": "door_safety_device",
+   "name_ko": "문닫힘안전장치(광전센서·세이프티슈)",
+   "location": "카",
+   "query": "문닫힘안전장치",
+   "aliases": [
+    "문닫힘안전장치",
+    "문닫힘 안전장치",
+    "세이프티슈",
+    "광전",
+    "멀티빔"
+   ],
+   "clauses": [
+    {
+     "num": "7.6.2.2.1",
+     "title": "자동 동력 작동식 문"
+    },
+    {
+     "num": "7.6.2.3",
+     "title": "수직 개폐식 문"
+    }
+   ]
+  },
+  {
+   "id": 41,
+   "key": "emergency_test_panel",
+   "name_ko": "비상운전·작동시험 패널",
+   "location": "승강장·건물(MRL)",
+   "query": "작동시험",
+   "aliases": [
+    "작동시험",
+    "비상운전 및 작동시험"
+   ],
+   "clauses": [
+    {
+     "num": "6.6.6",
+     "title": "비상운전 및 작동시험을 위한 장치"
+    }
+   ]
+  },
+  {
+   "id": 42,
+   "key": "glass_panel",
+   "name_ko": "유리(문짝·카 벽·승강로 벽)",
+   "location": "공통",
+   "query": "유리",
+   "aliases": [
+    "유리"
+   ],
+   "clauses": [
+    {
+     "num": "6.1.8.3",
+     "title": "벽, 바닥 및 천장의 강도 — 평면‧성형 유리판은 KS L 2004…"
+    },
+    {
+     "num": "7.5.3.4",
+     "title": "기계적 강도 — 유리판이 있는 승강장문, 유리판이 있…"
+    },
+    {
+     "num": "8.3.2.3",
+     "title": "카의 벽, 바닥 및 지붕 — 카 벽 전체 또는 일부에 사용되는 유…"
+    }
+   ]
+  },
+  {
+   "id": 43,
+   "key": "pulley",
+   "name_ko": "풀리(전향·편향 도르래)",
+   "location": "기계실·구동부",
+   "query": "풀리",
+   "aliases": [
+    "풀리",
+    "편향도르래",
+    "전향도르래"
+   ],
+   "clauses": [
+    {
+     "num": "9.7",
+     "title": "도르래‧풀리 및 스프로킷의 보호 수단"
+    },
+    {
+     "num": "9.8",
+     "title": "승강로 내부의 권상도르래‧풀리 및 스프로킷"
+    }
+   ]
+  },
+  {
+   "id": 44,
+   "key": "sheave_guard",
+   "name_ko": "도르래 보호수단(쉬브가드·로프이탈방지)",
+   "location": "기계실·구동부",
+   "query": "쉬브가드",
+   "aliases": [
+    "쉬브가드",
+    "로프 이탈",
+    "이탈방지봉",
+    "메쉬망",
+    "보호수단"
+   ],
+   "clauses": [
+    {
+     "num": "9.7",
+     "title": "도르래‧풀리 및 스프로킷의 보호 수단"
+    }
+   ]
+  },
+  {
+   "id": 45,
+   "key": "suspension_belt",
+   "name_ko": "현수 벨트(플랫벨트)",
+   "location": "기계실·구동부",
+   "query": "벨트",
+   "aliases": [
+    "벨트",
+    "플랫벨트"
+   ],
+   "clauses": [
+    {
+     "num": "9.1",
+     "title": "매다는 장치(현수)"
+    }
+   ]
+  },
+  {
+   "id": 46,
+   "key": "controller",
+   "name_ko": "제어반",
+   "location": "기계실·구동부",
+   "query": "제어반",
+   "aliases": [
+    "제어반",
+    "제어 패널",
+    "컨트롤러"
+   ],
+   "clauses": [
+    {
+     "num": "6.1.1.2",
+     "title": "엘리베이터 설비의 배치 — 하나의 기계실 또는 풀리실에 여러 대…"
+    },
+    {
+     "num": "14.5.1.2",
+     "title": "주 개폐기 — 이 개폐기는 다음과 같은 장소에 위치…"
+    }
+   ]
+  },
+  {
+   "id": 47,
+   "key": "main_switch",
+   "name_ko": "주개폐기(차단기)",
+   "location": "기계실·구동부",
+   "query": "주 개폐기",
+   "aliases": [
+    "주 개폐기",
+    "주개폐기",
+    "차단기",
+    "개폐기"
+   ],
+   "clauses": [
+    {
+     "num": "14.5",
+     "title": "주 개폐기"
+    }
+   ]
+  },
+  {
+   "id": 48,
+   "key": "manual_handwheel",
+   "name_ko": "수동 비상운전 핸들(휠)",
+   "location": "기계실·구동부",
+   "query": "핸들",
+   "aliases": [
+    "핸들",
+    "휠",
+    "수동 비상운전",
+    "수동비상운전"
+   ],
+   "clauses": [
+    {
+     "num": "13.2.3",
+     "title": "비상운전"
+    }
+   ]
+  },
+  {
+   "id": 49,
+   "key": "machine_beam",
+   "name_ko": "기계대(머신빔)",
+   "location": "기계실·구동부",
+   "query": "기계대",
+   "aliases": [
+    "기계대",
+    "머신빔"
+   ],
+   "clauses": []
+  },
+  {
+   "id": 50,
+   "key": "warning_sign",
+   "name_ko": "안내·경고 표지",
+   "location": "기계실·구동부",
+   "query": "경고",
+   "aliases": [
+    "표지",
+    "경고",
+    "안내문",
+    "주의사항"
+   ],
+   "clauses": [
+    {
+     "num": "6.4",
+     "title": "표시"
+    },
+    {
+     "num": "6.6.2",
+     "title": "안내표지 및 설명서"
+    }
+   ]
+  },
+  {
+   "id": 51,
+   "key": "shutoff_valve",
+   "name_ko": "차단밸브",
+   "location": "기계실(유압)",
+   "query": "차단밸브",
+   "aliases": [
+    "차단밸브"
+   ],
+   "clauses": [
+    {
+     "num": "13.3.5.1",
+     "title": "차단밸브"
+    }
+   ]
+  },
+  {
+   "id": 52,
+   "key": "rail_bracket",
+   "name_ko": "레일 브라켓",
+   "location": "승강로",
+   "query": "브라켓",
+   "aliases": [
+    "브라켓",
+    "브래킷",
+    "지지대"
+   ],
+   "clauses": [
+    {
+     "num": "Ⅵ.2",
+     "title": "주행안내 레일의 지지대"
+    }
+   ]
+  },
+  {
+   "id": 53,
+   "key": "counterweight",
+   "name_ko": "균형추",
+   "location": "승강로",
+   "query": "균형추",
+   "aliases": [
+    "균형추",
+    "카운터웨이트"
+   ],
+   "clauses": [
+    {
+     "num": "8.11",
+     "title": "균형추 및 평형추"
+    }
+   ]
+  },
+  {
+   "id": 54,
+   "key": "leveling_device",
+   "name_ko": "착상장치(차폐판·착상센서)",
+   "location": "승강로",
+   "query": "착상",
+   "aliases": [
+    "차폐판",
+    "착상",
+    "재-착상",
+    "자석"
+   ],
+   "clauses": [
+    {
+     "num": "16.1.1",
+     "title": "정상운전 제어"
+    }
+   ]
+  },
+  {
+   "id": 55,
+   "key": "travelling_cable",
+   "name_ko": "이동케이블",
+   "location": "승강로",
+   "query": "이동케이블",
+   "aliases": [
+    "이동케이블",
+    "이동 케이블"
+   ],
+   "clauses": [
+    {
+     "num": "14.6.5",
+     "title": "이동케이블"
+    }
+   ]
+  },
+  {
+   "id": 56,
+   "key": "compensation",
+   "name_ko": "보상수단(보상체인·보상로프)",
+   "location": "승강로",
+   "query": "보상",
+   "aliases": [
+    "보상",
+    "균형체인",
+    "균형로프"
+   ],
+   "clauses": [
+    {
+     "num": "9.6",
+     "title": "보상 수단"
+    }
+   ]
+  },
+  {
+   "id": 57,
+   "key": "car_top_balustrade",
+   "name_ko": "카 지붕 보호난간",
+   "location": "카 상부·피트",
+   "query": "보호난간",
+   "aliases": [
+    "보호난간",
+    "난간"
+   ],
+   "clauses": [
+    {
+     "num": "8.7",
+     "title": "카 지붕"
+    }
+   ]
+  },
+  {
+   "id": 58,
+   "key": "emergency_trap_door",
+   "name_ko": "비상구출문(카 지붕)",
+   "location": "카 상부·피트",
+   "query": "비상구출문",
+   "aliases": [
+    "비상구출문",
+    "비상구출구",
+    "구출구"
+   ],
+   "clauses": [
+    {
+     "num": "8.6",
+     "title": "비상구출문"
+    }
+   ]
+  },
+  {
+   "id": 59,
+   "key": "counterweight_screen",
+   "name_ko": "균형추 칸막이(피트 스크린)",
+   "location": "카 상부·피트",
+   "query": "균형추 칸막이",
+   "aliases": [
+    "균형추 칸막이",
+    "균형추 후면 칸막이",
+    "피트 스크린",
+    "주행구간은 다음 사항에 적합한 칸막이"
+   ],
+   "clauses": [
+    {
+     "num": "6.5.5.1",
+     "title": "승강로 내에서 보호 — 균형추 또는 평형추의 주행구간은 다음…"
+    }
+   ]
+  },
+  {
+   "id": 60,
+   "key": "pit_ladder",
+   "name_ko": "피트 사다리",
+   "location": "카 상부·피트",
+   "query": "피트 사다리",
+   "aliases": [
+    "사다리"
+   ],
+   "clauses": [
+    {
+     "num": "Ⅶ",
+     "title": "피트 사다리"
+    }
+   ]
+  },
+  {
+   "id": 61,
+   "key": "sump",
+   "name_ko": "집수정(피트 배수)",
+   "location": "카 상부·피트",
+   "query": "집수정",
+   "aliases": [
+    "집수정",
+    "배수"
+   ],
+   "clauses": [
+    {
+     "num": "6.1.9.3",
+     "title": "벽, 바닥 및 천장의 재질 — 피트는 주행안내 레일 고정 장치, 완…"
+    }
+   ]
+  },
+  {
+   "id": 62,
+   "key": "unlocking_keyhole",
+   "name_ko": "비상잠금해제 장치(삼각키 구멍)",
+   "location": "승강장",
+   "query": "비상잠금해제",
+   "aliases": [
+    "비상잠금해제",
+    "잠금해제",
+    "삼각키"
+   ],
+   "clauses": [
+    {
+     "num": "7.9.3",
+     "title": "비상잠금해제"
+    }
+   ]
+  },
+  {
+   "id": 63,
+   "key": "door_frame",
+   "name_ko": "삼방틀(JAMB·문설주·문틀)",
+   "location": "승강장",
+   "query": "문틀",
+   "aliases": [
+    "문틀",
+    "문설주",
+    "삼방틀",
+    "jamb"
+   ],
+   "clauses": [
+    {
+     "num": "7.6.2.2.1",
+     "title": "자동 동력 작동식 문"
+    },
+    {
+     "num": "7.1.4",
+     "title": "일반사항 — 승강장문 및 카문이 닫혀 있을 때,…"
+    }
+   ]
+  },
+  {
+   "id": 64,
+   "key": "hall_button",
+   "name_ko": "승강장 호출버튼",
+   "location": "승강장",
+   "query": "호출",
+   "aliases": [
+    "호출",
+    "승강장 버튼",
+    "홀버튼"
+   ],
+   "clauses": [
+    {
+     "num": "17.1.4",
+     "title": "이용자 조작설비"
+    }
+   ]
+  },
+  {
+   "id": 65,
+   "key": "fire_switch",
+   "name_ko": "소방운전 스위치",
+   "location": "승강장",
+   "query": "소방운전 스위치",
+   "aliases": [
+    "소방운전 스위치",
+    "소방운전",
+    "소방구조용 엘리베이터 스위치"
+   ],
+   "clauses": [
+    {
+     "num": "17.2.8.7",
+     "title": "1단계 : 소방구조용 엘리베이터에 대한 우선 호출"
+    }
+   ]
+  },
+  {
+   "id": 66,
+   "key": "sill",
+   "name_ko": "문턱(씰)",
+   "location": "승강장·카",
+   "query": "문턱",
+   "aliases": [
+    "문턱"
+   ],
+   "clauses": [
+    {
+     "num": "7.3.1",
+     "title": "문턱"
+    }
+   ]
+  },
+  {
+   "id": 67,
+   "key": "indicator",
+   "name_ko": "위치·운행방향 표시기(인디케이터·홀랜턴)",
+   "location": "승강장·카",
+   "query": "표시기",
+   "aliases": [
+    "표시기",
+    "인디케이터",
+    "홀랜턴",
+    "카 있음",
+    "위치 표시",
+    "점등 신호"
+   ],
+   "clauses": [
+    {
+     "num": "7.7.2",
+     "title": "<<카 있음>> 신호 표시"
+    },
+    {
+     "num": "16.4.3",
+     "title": "우선순위 및 표시 — 집중제어(collective cont…"
+    }
+   ]
+  },
+  {
+   "id": 68,
+   "key": "capacity_plate",
+   "name_ko": "정격하중·정원 표시",
+   "location": "카",
+   "query": "정원",
+   "aliases": [
+    "정원",
+    "정격하중"
+   ],
+   "clauses": [
+    {
+     "num": "8.2.3",
+     "title": "정원"
+    }
+   ]
+  },
+  {
+   "id": 69,
+   "key": "car_handrail",
+   "name_ko": "카 손잡이",
+   "location": "카",
+   "query": "손잡이",
+   "aliases": [
+    "손잡이"
+   ],
+   "clauses": [
+    {
+     "num": "8.3.3",
+     "title": "카의 벽, 바닥 및 지붕 — 바닥에서 높이 1.1 m 이하인 곳에…"
+    },
+    {
+     "num": "17.1.5.1",
+     "title": "기타 설비 — 카 내부에는 수평손잡이를 카 바닥에서…"
+    }
+   ]
+  },
+  {
+   "id": 70,
+   "key": "light_fixture",
+   "name_ko": "조명기구(기계실·승강로·피트·카)",
+   "location": "공통",
+   "query": "조명",
+   "aliases": [
+    "조명"
+   ],
+   "clauses": [
+    {
+     "num": "6.1.4",
+     "title": "조명"
+    },
+    {
+     "num": "8.10",
+     "title": "조명"
+    }
+   ]
+  },
+  {
+   "id": 71,
+   "key": "light_switch",
+   "name_ko": "조명 스위치",
+   "location": "공통",
+   "query": "조명 스위치",
+   "aliases": [
+    "조명 스위치",
+    "조명스위치",
+    "점멸"
+   ],
+   "clauses": [
+    {
+     "num": "6.1.5",
+     "title": "피트, 기계실ㆍ기계류 공간 및 풀리실의 전기 설비"
+    },
+    {
+     "num": "14.8",
+     "title": "조명 및 콘센트의 전원공급 제어"
+    }
+   ]
+  },
+  {
+   "id": 72,
+   "key": "socket_outlet",
+   "name_ko": "콘센트",
+   "location": "공통",
+   "query": "콘센트",
+   "aliases": [
+    "콘센트"
+   ],
+   "clauses": [
+    {
+     "num": "14.7",
+     "title": "조명 및 콘센트"
+    }
+   ]
+  },
+  {
+   "id": 73,
+   "key": "ventilation",
+   "name_ko": "환기설비(환풍기·환기구)",
+   "location": "공통",
+   "query": "환기",
+   "aliases": [
+    "환기",
+    "환풍기"
+   ],
+   "clauses": [
+    {
+     "num": "6.1.3",
+     "title": "승강로, 기계실ㆍ기계류 공간 및 풀리실의 환기"
+    },
+    {
+     "num": "8.9",
+     "title": "환기"
+    }
+   ]
+  },
+  {
+   "id": 74,
+   "key": "tactile_block",
+   "name_ko": "점형블록",
+   "location": "승강장",
+   "query": "점형블록",
+   "aliases": [
+    "점형블록",
+    "점형블럭",
+    "점자 블록"
+   ],
+   "clauses": [
+    {
+     "num": "17.1.5.5",
+     "title": "기타 설비 — 각 층의 호출버튼 0.3 m 전면에는…"
+    }
+   ]
+  }
+ ],
+ "legacy": {
+  "block": "tactile_block",
+  "car_button_emerg": "emergency_call",
+  "car_button_open": "door_open_button",
+  "indicator": "indicator",
+  "toe_guard": "toe_guard",
+  "car_button_panel": "cop",
+  "counterweight_screen": "counterweight_screen"
+ }
+}

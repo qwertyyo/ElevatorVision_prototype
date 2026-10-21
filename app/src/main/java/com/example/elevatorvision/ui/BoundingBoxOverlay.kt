@@ -1,29 +1,18 @@
 package com.example.elevatorvision.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.ui.platform.LocalContext
-import com.example.elevatorvision.StandardsRepository
 import android.graphics.Paint
 import android.graphics.RectF
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FactCheck
-import androidx.compose.material.icons.filled.Gavel
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import com.example.elevatorvision.CenterCropInfo
-import com.example.elevatorvision.ui.theme.BrandBlue
-import com.example.elevatorvision.ui.theme.BrandGreen
 import com.example.elevatorvision.ui.theme.DetectionAccent
 import com.example.elevatorvision.yolo.DetectionResult
 import kotlin.math.max
@@ -32,12 +21,6 @@ private data class OverlayItem(
     val det: DetectionResult,
     val mapped: RectF,
     val label: String
-)
-
-// 🌟 알림창 팝업에 보여줄 글자들을 임시로 저장해두는 바구니 데이터 클래스
-private data class DialogContent(
-    val title: String,
-    val message: String
 )
 
 @Composable
@@ -53,9 +36,6 @@ fun BoundingBoxOverlay(
     onSheetVisibleChanged: (Boolean) -> Unit = {}
 ) {
     BoxWithConstraints(modifier = modifier) {
-        val context = LocalContext.current
-        LaunchedEffect(Unit) { StandardsRepository.load(context) }
-
         val density = LocalDensity.current
         val dstWpx = with(density) { maxWidth.toPx() }
         val dstHpx = with(density) { maxHeight.toPx() }
@@ -160,26 +140,17 @@ fun BoundingBoxOverlay(
             }
 
         var selected by remember { mutableStateOf<OverlayItem?>(null) }
-        var showStandardsFor by remember { mutableStateOf<String?>(null) }
-        var showLawFor by remember { mutableStateOf<String?>(null) }
-        var alertDialogContent by remember { mutableStateOf<DialogContent?>(null) }
 
-        // 부품 선택/검사기준/표준화 바텀시트가 하나라도 떠 있으면 촬영 UI(줌/셔터/손전등 등)와
-        // 겹쳐 보이므로, 호출한 쪽(CameraScreen)이 그 UI를 숨길 수 있게 알려준다.
-        val anySheetVisible = selected != null || showStandardsFor != null || showLawFor != null
-        LaunchedEffect(anySheetVisible) { onSheetVisibleChanged(anySheetVisible) }
+        // 기준 시트가 떠 있으면 촬영 UI(줌/셔터/손전등 등)와 겹쳐 보이므로,
+        // 호출한 쪽(CameraScreen)이 그 UI를 숨길 수 있게 알려준다.
+        val sheetVisible = selected != null
+        LaunchedEffect(sheetVisible) { onSheetVisibleChanged(sheetVisible) }
 
-        // 이 시트들은 실제 Dialog가 아니라 직접 그린 오버레이라 시스템 뒤로가기를 스스로
+        // 기준 시트는 실제 Dialog가 아니라 직접 그린 오버레이라 시스템 뒤로가기를 스스로
         // 소비하지 않는다. 그대로 두면 화면 자체를 전환하는 상위 BackHandler(AppRoot)가
         // 바로 발동해서 시트를 건너뛰고 화면이 통째로 튕겨버린다.
-        // 아래(부품 선택 시트)를 먼저 등록하고 위(검사기준/표준화 시트)를 나중에 등록하면,
-        // OnBackPressedDispatcher가 나중에 등록된 콜백을 우선 호출하므로
-        // "위 레이어부터 하나씩" 닫히는 순서가 보장된다.
-        BackHandler(enabled = selected != null) {
+        BackHandler(enabled = sheetVisible) {
             selected = null
-        }
-        BackHandler(enabled = showStandardsFor != null || showLawFor != null) {
-            if (showLawFor != null) showLawFor = null else showStandardsFor = null
         }
 
         // 1. 인식 박스: 모서리 브라켓 + 라벨 필
@@ -274,88 +245,12 @@ fun BoundingBoxOverlay(
             )
         }
 
-        // 3. 부품 선택 바텀시트: 검사기준 / 표준화 / 검사가이드
+        // 3. 부품을 누르면 그 부품의 검사기준을 통합검색(WebView)으로 바로 보여준다
         val currentSelected = selected
         if (currentSelected != null) {
-            val name = currentSelected.det.className
-                ?: labels.getOrNull(currentSelected.det.classId)
-                ?: "Unknown"
-
-            BottomSheetScaffold(
-                visible = true,
+            KijunSheet(
+                className = currentSelected.label,
                 onDismiss = { selected = null },
-                eyebrow = "AI 인식 부품",
-                title = name,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                SheetMenuRow(
-                    icon = Icons.Filled.Gavel,
-                    label = "검사기준",
-                    accentColor = BrandBlue,
-                    onClick = { showLawFor = name }
-                )
-                SheetMenuRow(
-                    icon = Icons.Filled.FactCheck,
-                    label = "표준화",
-                    accentColor = BrandBlue,
-                    onClick = { showStandardsFor = name }
-                )
-                SheetMenuRow(
-                    icon = Icons.Filled.MenuBook,
-                    label = "검사 가이드",
-                    accentColor = BrandBlue,
-                    onClick = {
-                        alertDialogContent = DialogContent(
-                            title = "$name - 검사 가이드",
-                            message = "검사 가이드 내용"
-                        )
-                    }
-                )
-            }
-        }
-
-        // 4. 검사가이드 안내 (임시 알림)
-        if (alertDialogContent != null) {
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { alertDialogContent = null },
-                title = {
-                    androidx.compose.material3.Text(
-                        text = alertDialogContent!!.title,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                text = {
-                    androidx.compose.material3.Text(
-                        text = alertDialogContent!!.message,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                },
-                confirmButton = {
-                    androidx.compose.material3.Button(onClick = { alertDialogContent = null }) {
-                        androidx.compose.material3.Text("확인")
-                    }
-                }
-            )
-        }
-
-        if (showStandardsFor != null) {
-            val name = showStandardsFor!!
-            StandardsListDialog(
-                partName = name,
-                dialogTitle = "표준화 안내",
-                entries = StandardsRepository.getByClassName(name).map { it.toListDialogEntry() },
-                onDismiss = { showStandardsFor = null },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
-        }
-
-        if (showLawFor != null) {
-            val name = showLawFor!!
-            StandardsListDialog(
-                partName = name,
-                dialogTitle = "검사기준 안내",
-                entries = StandardsRepository.getLawByClassName(name).map { it.toListDialogEntry() },
-                onDismiss = { showLawFor = null },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }

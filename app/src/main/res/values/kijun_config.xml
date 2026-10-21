@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        검사기준 통합검색 사이트 주소 (qwertyyo/kijun).
+        주소가 바뀌면 여기 한 곳만 고친다. 반드시 '/'로 끝나야 한다.
+        사이트 데이터·코드는 kijun 저장소에서만 고치고, 이 앱에는 복사본을 두지 않는다
+        (오프라인용 저장본은 앱이 실행 중에 이 주소에서 받아 폰 안에만 보관한다).
+    -->
+    <string name="kijun_base_url" translatable="false">https://qwertyyo.github.io/kijun/</string>
+</resources>
