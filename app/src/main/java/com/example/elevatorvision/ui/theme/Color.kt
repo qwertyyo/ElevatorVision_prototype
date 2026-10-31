@@ -15,10 +15,20 @@ val BrandOrange = Color(0xFFF7941D)        // secondary — 세션 태그 등 �
 val BrandGreen = Color(0xFF4CAF50)         // LIVE 표시 점 등 상태 성공
 val DangerRed = Color(0xFFFF5252)          // 삭제, FREEZE 배지 등 경고성
 
+val AccentCard = Color(0xFF1A6FB8)         // v2 첫 화면 "AI 실시간 부품 인식" 큰 카드, 저장 버튼
+val SheetHandle = Color(0xFF3A4552)
+
+// 상태 배지 (어두운 바탕 + 밝은 글자)
+val FreezeBg = Color(0xFF3A1518)
+val FreezeFg = Color(0xFFFF8A8A)
+val OfflineBg = Color(0xFF3A2810)
+val OfflineFg = Color(0xFFFFB25C)
+
 // AR 인식 오버레이 전용 (브랜드컬러와 구분되는 사이언 계열)
 val DetectionAccent = Color(0xFF29E0E8)
 
 // 텍스트
 val TextPrimary = Color(0xFFEDF1F5)
+val TextMuted = Color(0xFFB7C2CE)           // 카메라 위 패널의 보조 글자
 val TextSecondary = Color(0xFF8E9BAA)
 val TextTertiary = Color(0xFF5B6675)

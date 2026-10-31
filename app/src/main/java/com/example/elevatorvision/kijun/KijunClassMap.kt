@@ -18,7 +18,8 @@ data class KijunClassEntry(
     val location: String,
     val query: String,          // 통합검색에 넣을 대표 검색어
     val aliases: List<String>,
-    val clauses: List<KijunClause>
+    val clauses: List<KijunClause>,
+    val deleted: Boolean = false   // 번호만 남긴 삭제·통합 클래스 (인식·검색 목록에서 뺀다)
 )
 
 object KijunClassMap {
@@ -55,7 +56,8 @@ object KijunClassMap {
                         val co = clauseArr.getJSONObject(c)
                         add(KijunClause(co.getString("num"), co.optString("title")))
                     }
-                }
+                },
+                deleted = o.optBoolean("deleted")
             )
             map[entry.key] = entry
         }
@@ -69,6 +71,20 @@ object KijunClassMap {
     }
 
     /** 모델이 돌려준 클래스 이름(새 키 또는 예전 이름)으로 연결 정보를 찾는다. */
+    // 통합된 클래스(예: 45 현수 벨트 → 3 주로프)는 legacy 쪽 대상을 먼저 본다.
     fun find(className: String): KijunClassEntry? =
-        byKey[className] ?: legacy[className]?.let { byKey[it] }
+        legacy[className]?.let { byKey[it] } ?: byKey[className]
+
+    /** 검색 화면에 보여 줄 클래스 전부 (번호만 남긴 삭제·통합 클래스는 뺀다). */
+    fun all(): List<KijunClassEntry> = byKey.values.filter { !it.deleted }.sortedBy { it.id }
+
+    /** 인식 결과에서 버릴 클래스 번호 (번호만 남긴 삭제·통합 클래스). */
+    fun deletedIds(): Set<Int> = byKey.values.filter { it.deleted }.map { it.id }.toSet()
+
+    /** 인식 박스·칩에 쓸 짧은 이름: "권상기(구동기)" → "권상기". 모르는 클래스면 그대로. */
+    fun shortName(className: String): String =
+        find(className)?.nameKo?.substringBefore('(')?.trim()?.ifEmpty { null } ?: className
+
+    /** 목록·시트 제목에 쓸 전체 이름. */
+    fun fullName(className: String): String = find(className)?.nameKo ?: className
 }

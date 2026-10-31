@@ -30,6 +30,14 @@ QUERY_OVERRIDE: dict[str, str] = {
     "leveling_device": "착상",       # 차폐판 → 10위 밖, 착상 → 16.1.1 2위
     "warning_sign": "경고",          # 표지 → 7위, 경고 → 6.4 1위
     "door_link_rope": "연동",        # 연동로프 → 결과 없음, 연동 → 7.11 8위
+    # 2026-11-01 사이트 검색 순위 수정 뒤 다시 돌려 본 결과 (전체 탭 기준)
+    "door_open_button": "문열림버튼",  # 열림버튼 → 불합격 7.6.3 1위·기준 2위, 문열림버튼 → 기준 7.6.3 1위
+    "hall_button": "호출버튼",         # 호출 → 피난호출 등 15위, 호출버튼 → 17.1.4.1 1위
+    "indicator": "위치표시기",         # 표시기 → 16.4.3 3위, 위치표시기 → 1위
+    "car_handrail": "카 손잡이",       # 손잡이 → 에스컬레이터 핸드레일 섞임, 카 손잡이 → 8.3.3 1위
+    "manual_handwheel": "비상운전 핸들",  # 핸들 → 에스컬레이터 수동핸들 섞임
+    "cop": "카 내 조작반",             # 조작반 → 점검운전 조작반 1위
+    "fire_switch": "소방구조용 엘리베이터 스위치",  # 소방운전 스위치 → 사전이 소방구조용 전체로 넓혀 17.2.3.1 등, 이것 → 17.2.8.1~3
 }
 
 # 예전 클래스 이름 → 새 클래스 키
@@ -41,6 +49,7 @@ LEGACY = {
     "toe_guard": "toe_guard",
     "car_button_panel": "cop",
     "counterweight_screen": "counterweight_screen",
+    "suspension_belt": "suspension_rope",   # 45 현수 벨트 → 3 주로프로 통합 (2026-10-31)
 }
 
 
@@ -91,14 +100,17 @@ def main() -> None:
             sys.exit(f"엑셀 {cid} {key} 가 data.yaml 과 다름 (data.yaml: {names[cid] if cid < len(names) else '없음'})")
         aliases = [a.strip() for a in str(r[c_alias] or "").split(",") if a.strip()]
         query = QUERY_OVERRIDE.get(key) or (aliases[0] if aliases else str(r[c_ko]))
+        name_ko = str(r[c_ko]).strip()
         classes.append({
             "id": cid,
             "key": key,
-            "name_ko": str(r[c_ko]).strip(),
+            "name_ko": name_ko,
             "location": str(r[c_loc] or "").strip(),
             "query": query,
             "aliases": aliases,
             "clauses": parse_clauses(str(r[c_clause] or "")),
+            # 엑셀 한글 이름이 "(삭제 …" / "(통합 …" 이면 번호만 남긴 클래스: 앱이 인식·검색 목록에서 뺀다
+            "deleted": name_ko.startswith(("(삭제", "(통합")),
         })
 
     if [c["key"] for c in classes] != names:

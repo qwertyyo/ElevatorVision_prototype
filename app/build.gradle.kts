@@ -11,17 +11,22 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.elevatorvision"
+        // v2 는 기존 앱(com.example.elevatorvision, v1)을 덮어쓰지 않고 따로 설치된다 (폰에 둘 다 남음).
+        // 코드 패키지(namespace)는 그대로라 소스 변경 없음. 저장 기록·검사기준 저장본은 앱마다 따로다.
+        applicationId = "com.example.elevatorvision.v2"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 4
+        versionName = "2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
+            // 개념증명 배포용: 따로 만든 서명 키가 없어서 Android Studio 기본(debug) 키로 서명한다.
+            // applicationId 가 .v2 라서 기존 v1 앱과는 별개 앱으로 설치된다.
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -38,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true   // 첫 화면 꼬리말의 버전 표시
     }
     packaging {
         jniLibs {

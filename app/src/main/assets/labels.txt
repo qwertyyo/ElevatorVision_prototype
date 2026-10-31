@@ -73,3 +73,5 @@ light_switch
 socket_outlet
 ventilation
 tactile_block
+tension_weight
+toe_board

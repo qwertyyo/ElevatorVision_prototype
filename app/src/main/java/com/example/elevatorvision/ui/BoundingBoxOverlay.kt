@@ -1,18 +1,26 @@
 package com.example.elevatorvision.ui
 
-import androidx.activity.compose.BackHandler
 import android.graphics.Paint
 import android.graphics.RectF
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.elevatorvision.CenterCropInfo
+import com.example.elevatorvision.kijun.KijunClassMap
+import com.example.elevatorvision.ui.theme.BackgroundDark
 import com.example.elevatorvision.ui.theme.DetectionAccent
 import com.example.elevatorvision.yolo.DetectionResult
 import kotlin.math.max
@@ -23,18 +31,27 @@ private data class OverlayItem(
     val label: String
 )
 
+/**
+ * 인식 박스 그리기.
+ * - detections 순서가 곧 번호 순서다 (호출 쪽에서 신뢰도 순으로 정렬해서 넘긴다).
+ * - numbered=false(라이브): 박스 위에 [● 부품이름 92%] 라벨
+ * - numbered=true(촬영·저장 화면): 박스 왼쪽 위에 번호 배지, 이름은 아래 목록에서 본다
+ * - onBoxClick 이 있으면 박스를 눌렀을 때 그 박스 번호(0부터)를 알려 준다. 검사기준 시트는 화면 쪽에서 띄운다.
+ * - labelTopInset: 화면 위쪽 반투명 바 높이. 박스가 맨 위에 붙어도 번호·라벨은 그 아래에 그려서 가려지지 않게 한다.
+ */
 @Composable
 fun BoundingBoxOverlay(
     modifier: Modifier = Modifier,
     detections: List<DetectionResult>,
-    labels: List<String>,
-    modelInputSize: Int = 640,
-    maxShow: Int = 20,
-    showInfoIcons: Boolean,
-    enablePopup: Boolean,
     cropInfo: CenterCropInfo? = null,
-    onSheetVisibleChanged: (Boolean) -> Unit = {}
+    modelInputSize: Int = 640,
+    numbered: Boolean = false,
+    labelTopInset: Dp = 0.dp,
+    onBoxClick: ((Int) -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    remember { KijunClassMap.load(context) }
+
     BoxWithConstraints(modifier = modifier) {
         val density = LocalDensity.current
         val dstWpx = with(density) { maxWidth.toPx() }
@@ -53,7 +70,7 @@ fun BoundingBoxOverlay(
         }
 
         // 모델 입력을 만들 때 폰의 물리적 방향에 맞춰 정사각형 크롭을 추가로 돌렸다면(extraRotationDegrees),
-        // 박스 좌표는 그 회전이 적용된 640x640 좌표계로 나온다. 화면 매핑은 회전 전 좌표계(크롭 좌표계)
+        // 박스 좌표는 그 회전이 적용된 정사각형 좌표계로 나온다. 화면 매핑은 회전 전 좌표계(크롭 좌표계)
         // 기준이므로, 먼저 이 회전을 역으로 되돌려야 박스가 화면과 어긋나지 않는다.
         fun unrotateInSquare(r: RectF, size: Float, degrees: Int): RectF {
             val norm = ((degrees % 360) + 360) % 360
@@ -73,6 +90,7 @@ fun BoundingBoxOverlay(
             return RectF(xs.min(), ys.min(), xs.max(), ys.max())
         }
 
+        // 저장된 예전 기록(v1, 640 입력)도 cropInfo.targetSize 로 자기 크기를 알고 있어서 그대로 맞는다.
         fun modelRectToFrameRect(r: RectF): RectF {
             val info = cropInfo ?: return r
             val unrotated = unrotateInSquare(r, info.targetSize.toFloat(), info.extraRotationDegrees)
@@ -85,174 +103,158 @@ fun BoundingBoxOverlay(
             )
         }
 
-        val namePaint = remember {
+        val namePaint = remember(density) {
             Paint().apply {
                 isAntiAlias = true
-                textSize = 32f
+                textSize = with(density) { 13.sp.toPx() }
                 color = android.graphics.Color.WHITE
                 isFakeBoldText = true
             }
         }
-        val confPaint = remember {
+        val confPaint = remember(density) {
             Paint().apply {
                 isAntiAlias = true
-                textSize = 32f
-                color = android.graphics.Color.parseColor("#29E0E8")
+                textSize = with(density) { 12.sp.toPx() }
+                color = DetectionAccent.toArgb()
             }
         }
         val bgPaint = remember {
             Paint().apply {
                 isAntiAlias = true
-                color = android.graphics.Color.argb(200, 10, 16, 22)
+                color = android.graphics.Color.argb(219, 10, 16, 22)
             }
         }
-        val borderPaint = remember {
+        val borderPaint = remember(density) {
             Paint().apply {
                 isAntiAlias = true
                 style = Paint.Style.STROKE
-                strokeWidth = 2f
-                color = android.graphics.Color.parseColor("#4029E0E8")
+                strokeWidth = with(density) { 1.dp.toPx() }
+                color = DetectionAccent.copy(alpha = 0.35f).toArgb()
             }
         }
-        val dotPaint = remember {
+        val accentPaint = remember {
             Paint().apply {
                 isAntiAlias = true
-                color = android.graphics.Color.parseColor("#29E0E8")
+                color = DetectionAccent.toArgb()
+            }
+        }
+        val badgeTextPaint = remember(density) {
+            Paint().apply {
+                isAntiAlias = true
+                textSize = with(density) { 14.sp.toPx() }
+                color = BackgroundDark.toArgb()
+                isFakeBoldText = true
+                textAlign = Paint.Align.CENTER
             }
         }
 
-        val fm = namePaint.fontMetrics
-        val textHeight = fm.bottom - fm.top
-
-        val items = detections
-            .sortedByDescending { it.confidence }
-            .take(maxShow)
-            .map { d ->
-                val rModel = RectF(d.left, d.top, d.right, d.bottom)
-                val rFrame = modelRectToFrameRect(rModel)
-                val mapped = if (cropInfo != null) {
-                    mapRectFrameToScreen(rFrame, cropInfo.srcW.toFloat(), cropInfo.srcH.toFloat())
-                } else {
-                    mapRectFrameToScreen(rModel, modelInputSize.toFloat(), modelInputSize.toFloat())
-                }
-                val name = d.className ?: labels.getOrNull(d.classId) ?: "Unknown"
-                OverlayItem(d, mapped, name)
+        val items = detections.map { d ->
+            val rModel = RectF(d.left, d.top, d.right, d.bottom)
+            val mapped = if (cropInfo != null) {
+                mapRectFrameToScreen(modelRectToFrameRect(rModel), cropInfo.srcW.toFloat(), cropInfo.srcH.toFloat())
+            } else {
+                mapRectFrameToScreen(rModel, modelInputSize.toFloat(), modelInputSize.toFloat())
             }
-
-        var selected by remember { mutableStateOf<OverlayItem?>(null) }
-
-        // 기준 시트가 떠 있으면 촬영 UI(줌/셔터/손전등 등)와 겹쳐 보이므로,
-        // 호출한 쪽(CameraScreen)이 그 UI를 숨길 수 있게 알려준다.
-        val sheetVisible = selected != null
-        LaunchedEffect(sheetVisible) { onSheetVisibleChanged(sheetVisible) }
-
-        // 기준 시트는 실제 Dialog가 아니라 직접 그린 오버레이라 시스템 뒤로가기를 스스로
-        // 소비하지 않는다. 그대로 두면 화면 자체를 전환하는 상위 BackHandler(AppRoot)가
-        // 바로 발동해서 시트를 건너뛰고 화면이 통째로 튕겨버린다.
-        BackHandler(enabled = sheetVisible) {
-            selected = null
+            OverlayItem(d, mapped, KijunClassMap.shortName(d.className ?: "Unknown"))
         }
 
-        // 1. 인식 박스: 모서리 브라켓 + 라벨 필
+        // 화면 자체는 세로로 고정돼 있지만, 폰을 기울여 들면 글자만 화면에 그대로 붙어 있어
+        // 사용자 눈에는 돌아간 것처럼 보인다. 라벨·번호만 자기 중심을 축으로 반대로 돌려 그려서,
+        // 폰을 어느 방향으로 들어도 항상 똑바로 읽히게 한다. extraRotationDegrees는 모델 입력을
+        // "바로 세우기 위해" 크롭에 적용한 정방향 회전이므로 그 반대(역방향)로 돌린다.
+        val labelRotation = -(cropInfo?.extraRotationDegrees ?: 0).toFloat()
+
         Canvas(Modifier.matchParentSize()) {
-            val strokePx = 3f
-            val bracketLen = 18f
-            val inset = 4f
+            val strokePx = 2.dp.toPx()
+            val minTop = labelTopInset.toPx()
+            val radiusPx = 6.dp.toPx()
+            val fm = namePaint.fontMetrics
+            val textHeight = fm.bottom - fm.top
 
-            items.forEach { item ->
+            items.forEachIndexed { index, item ->
                 val r = item.mapped
-
-                fun corner(cx: Float, cy: Float, dx: Int, dy: Int) {
-                    drawLine(
-                        color = DetectionAccent,
-                        start = Offset(cx, cy),
-                        end = Offset(cx + bracketLen * dx, cy),
-                        strokeWidth = strokePx
-                    )
-                    drawLine(
-                        color = DetectionAccent,
-                        start = Offset(cx, cy),
-                        end = Offset(cx, cy + bracketLen * dy),
-                        strokeWidth = strokePx
-                    )
-                }
-                corner(r.left - inset, r.top - inset, 1, 1)
-                corner(r.right + inset, r.top - inset, -1, 1)
-                corner(r.left - inset, r.bottom + inset, 1, -1)
-                corner(r.right + inset, r.bottom + inset, -1, -1)
-
-                // 라벨 필: [●] 이름  신뢰도%
-                val confText = "${(item.det.confidence * 100).let { "%.1f".format(it) }}%"
-                val dotRadius = 5f
-                val gap = 8f
-                val paddingX = 12f
-                val paddingY = 8f
-
-                val nameW = namePaint.measureText(item.label)
-                val confW = confPaint.measureText(confText)
-                val pillW = paddingX * 2 + dotRadius * 2 + gap + nameW + gap + confW
-                val pillH = textHeight + paddingY * 2
-
-                val pillLeft = r.left.coerceAtLeast(0f)
-                val pillTop = if (r.top - pillH - 8f >= 0f) r.top - pillH - 8f else r.bottom + 8f
-
-                // 화면 자체는 세로로 고정돼 있지만, 폰을 기울여 들면 글자만 화면에 그대로
-                // 붙어 있어 사용자 눈에는 돌아간 것처럼 보인다. 라벨 필만 자기 중심을 축으로
-                // 반대로 돌려 그려서, 폰을 어느 방향으로 들어도 항상 똑바로 읽히게 한다.
-                // extraRotationDegrees는 모델 입력을 "바로 세우기 위해" 크롭에 적용한 정방향
-                // 회전이므로, 화면에 그대로 붙어있는 텍스트를 사람이 보기 좋게 하려면
-                // 그 반대(역방향)로 돌려야 한다.
-                val labelRotation = -(cropInfo?.extraRotationDegrees ?: 0).toFloat()
+                drawRoundRect(
+                    color = DetectionAccent,
+                    topLeft = Offset(r.left, r.top),
+                    size = Size(r.width(), r.height()),
+                    cornerRadius = CornerRadius(radiusPx),
+                    style = Stroke(width = strokePx)
+                )
 
                 drawContext.canvas.nativeCanvas.apply {
-                    val pivotX = pillLeft + pillW / 2f
-                    val pivotY = pillTop + pillH / 2f
-                    val rotated = labelRotation != 0f
-                    if (rotated) {
-                        save()
-                        rotate(labelRotation, pivotX, pivotY)
+                    if (numbered) {
+                        // 번호 배지: 박스 왼쪽 위 모서리에 걸친 동그라미
+                        val cx = r.left + 3.dp.toPx()
+                        val cy = (r.top + 3.dp.toPx()).coerceAtLeast(minTop + 17.dp.toPx())
+                        val rotated = labelRotation != 0f
+                        if (rotated) {
+                            save()
+                            rotate(labelRotation, cx, cy)
+                        }
+                        drawCircle(cx, cy, 13.dp.toPx(), accentPaint)
+                        val bfm = badgeTextPaint.fontMetrics
+                        drawText("${index + 1}", cx, cy - (bfm.ascent + bfm.descent) / 2f, badgeTextPaint)
+                        if (rotated) restore()
+                    } else {
+                        // 라벨 필: [●] 이름  신뢰도%
+                        val confText = "${(item.det.confidence * 100).toInt()}%"
+                        val dotRadius = 3.5.dp.toPx()
+                        val gap = 6.dp.toPx()
+                        val paddingX = 10.dp.toPx()
+                        val paddingY = 5.dp.toPx()
+
+                        val nameW = namePaint.measureText(item.label)
+                        val confW = confPaint.measureText(confText)
+                        val pillW = paddingX * 2 + dotRadius * 2 + gap + nameW + gap + confW
+                        val pillH = textHeight + paddingY * 2
+
+                        val pillLeft = r.left.coerceIn(0f, (size.width - pillW).coerceAtLeast(0f))
+                        val pillTop = if (r.top - pillH - 4.dp.toPx() >= minTop) r.top - pillH - 4.dp.toPx()
+                        else (r.top + 4.dp.toPx()).coerceAtLeast(minTop + 4.dp.toPx())
+
+                        val pivotX = pillLeft + pillW / 2f
+                        val pivotY = pillTop + pillH / 2f
+                        val rotated = labelRotation != 0f
+                        if (rotated) {
+                            save()
+                            rotate(labelRotation, pivotX, pivotY)
+                        }
+
+                        val rr = RectF(pillLeft, pillTop, pillLeft + pillW, pillTop + pillH)
+                        val corner = 8.dp.toPx()
+                        drawRoundRect(rr, corner, corner, bgPaint)
+                        drawRoundRect(rr, corner, corner, borderPaint)
+
+                        val textBaseline = pillTop + paddingY - fm.top
+                        var x = pillLeft + paddingX
+                        drawCircle(x + dotRadius, pillTop + pillH / 2f, dotRadius, accentPaint)
+                        x += dotRadius * 2 + gap
+                        drawText(item.label, x, textBaseline, namePaint)
+                        x += nameW + gap
+                        drawText(confText, x, textBaseline, confPaint)
+
+                        if (rotated) restore()
                     }
-
-                    val rr = android.graphics.RectF(pillLeft, pillTop, pillLeft + pillW, pillTop + pillH)
-                    drawRoundRect(rr, 8f, 8f, bgPaint)
-                    drawRoundRect(rr, 8f, 8f, borderPaint)
-
-                    val textBaseline = pillTop + pillH - paddingY - fm.bottom
-                    var x = pillLeft + paddingX
-                    drawCircle(x + dotRadius, textBaseline - textHeight / 2.5f, dotRadius, dotPaint)
-                    x += dotRadius * 2 + gap
-                    drawText(item.label, x, textBaseline, namePaint)
-                    x += nameW + gap
-                    drawText(confText, x, textBaseline, confPaint)
-
-                    if (rotated) restore()
                 }
             }
         }
 
-        // 2. 박스 클릭 감지 패널
-        items.forEach { item ->
-            val boxLeftDp = with(density) { item.mapped.left.toDp() }
-            val boxTopDp = with(density) { item.mapped.top.toDp() }
-            val boxWidthDp = with(density) { item.mapped.width().toDp() }
-            val boxHeightDp = with(density) { item.mapped.height().toDp() }
-
-            Box(
-                modifier = Modifier
-                    .offset(x = boxLeftDp, y = boxTopDp)
-                    .size(width = boxWidthDp, height = boxHeightDp)
-                    .clickable { selected = item }
-            )
-        }
-
-        // 3. 부품을 누르면 그 부품의 검사기준을 통합검색(WebView)으로 바로 보여준다
-        val currentSelected = selected
-        if (currentSelected != null) {
-            KijunSheet(
-                className = currentSelected.label,
-                onDismiss = { selected = null },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
+        // 박스 클릭 감지 패널
+        if (onBoxClick != null) {
+            items.forEachIndexed { index, item ->
+                Box(
+                    modifier = Modifier
+                        .offset(
+                            x = with(density) { item.mapped.left.toDp() },
+                            y = with(density) { item.mapped.top.toDp() }
+                        )
+                        .size(
+                            width = with(density) { item.mapped.width().toDp() },
+                            height = with(density) { item.mapped.height().toDp() }
+                        )
+                        .clickable { onBoxClick(index) }
+                )
+            }
         }
     }
 }

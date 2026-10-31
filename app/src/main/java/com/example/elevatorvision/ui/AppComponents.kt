@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.elevatorvision.ui.theme.OutlineDark
 import com.example.elevatorvision.ui.theme.SheetDark
+import com.example.elevatorvision.ui.theme.SheetHandle
+import com.example.elevatorvision.ui.theme.SurfaceVariantDark
+import com.example.elevatorvision.ui.theme.TextPrimary
 import com.example.elevatorvision.ui.theme.TextSecondary
 import com.example.elevatorvision.ui.theme.TextTertiary
 
@@ -218,6 +222,7 @@ fun BottomSheetScaffold(
     eyebrow: String? = null,
     title: String,
     modifier: Modifier = Modifier,
+    eyebrowColor: Color = TextTertiary,
     onClose: () -> Unit = onDismiss,
     startExpanded: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
@@ -289,9 +294,9 @@ fun BottomSheetScaffold(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(width = 36.dp, height = 4.dp)
+                            .size(width = 40.dp, height = 4.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(OutlineDark)
+                            .background(SheetHandle)
                     )
                 }
 
@@ -306,7 +311,7 @@ fun BottomSheetScaffold(
                         if (eyebrow != null) {
                             Text(
                                 eyebrow,
-                                color = TextTertiary,
+                                color = eyebrowColor,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 letterSpacing = 0.5.sp
@@ -316,16 +321,22 @@ fun BottomSheetScaffold(
                         Text(
                             title,
                             color = Color.White,
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
-                    IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(SurfaceVariantDark)
+                    ) {
                         Icon(
                             Icons.Filled.Close,
                             contentDescription = "닫기",
-                            tint = TextSecondary,
-                            modifier = Modifier.size(18.dp)
+                            tint = TextPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -344,6 +355,81 @@ fun BottomSheetScaffold(
     }
 }
 
+
+/** 작은 정보 배지 (예: "검색어 ‘권상기’", "오프라인 저장본", "정지 화면"). */
+@Composable
+fun InfoChip(
+    text: String,
+    modifier: Modifier = Modifier,
+    background: Color = SurfaceVariantDark,
+    color: Color = Color(0xFFB7C2CE),
+    bold: Boolean = false
+) {
+    Text(
+        text,
+        color = color,
+        fontSize = 12.sp,
+        fontWeight = if (bold) FontWeight.Bold else FontWeight.Medium,
+        maxLines = 1,
+        modifier = modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(background)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    )
+}
+
+/** 누를 수 있는 둥근 칩 (부품 이름, 장소 고르기 등). selected 면 흰 바탕. */
+@Composable
+fun PillChip(
+    text: String,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    height: androidx.compose.ui.unit.Dp = 40.dp,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .height(height)
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (selected) TextPrimary else SurfaceVariantDark)
+            .let { m -> if (selected) m else m.border(1.dp, OutlineDark, RoundedCornerShape(999.dp)) }
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text,
+            color = if (selected) Color(0xFF0A0E14) else TextPrimary,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1
+        )
+    }
+}
+
+/** 화면 왼쪽 위 뒤로가기(44dp 원). */
+@Composable
+fun BackCircleButton(
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    background: Color = Color.Transparent,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(background)
+    ) {
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = contentDescription,
+            tint = Color.White,
+            modifier = Modifier.size(26.dp)
+        )
+    }
+}
 
 /**
  * 화면 하단의 장식용 홈 인디케이터 바 (레퍼런스 디자인의 통일된 룩을 위한 장식 요소).

@@ -3,6 +3,7 @@ package com.example.elevatorvision.yolo
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
+import com.example.elevatorvision.kijun.KijunClassMap
 import org.tensorflow.lite.Interpreter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -10,17 +11,23 @@ import kotlin.math.max
 
 /**
  * YOLO11 TFLite 추론 (Ultralytics → onnx2tf 변환본).
- * 입력 [1,640,640,3] float32 RGB 0~1, 출력 [1, 4+클래스수, 8400]:
- * 채널 0~3 = cx,cy,w,h (640 입력 기준 픽셀), 4~ = 클래스 점수(sigmoid 적용됨, objectness 없음), NMS는 앱에서.
- * 자세한 명세: D:\elevator_dataset\runs\rf_v3_yolo11s\TFLITE_SPEC.md
+ * 입력 [1,S,S,3] float32 RGB 0~1, 출력 [1, 4+클래스수, 앵커수]:
+ * 채널 0~3 = cx,cy,w,h (S 입력 기준 픽셀), 4~ = 클래스 점수(sigmoid 적용됨, objectness 없음), NMS는 앱에서.
+ * v2 모델(2.0 = 8차 학습, 2.1 = 10차 학습, 77클래스)은 S=800, 앵커 13125. 입력 크기도 모델에서 읽으므로 모델만 바꾸면 된다.
+ * 자세한 명세: D:\elevator_dataset\runs\rf_v3_yolo11s\TFLITE_SPEC.md (v1, S=640 기준)
  * 입력은 ImageUtils가 만든 정사각형 크롭이라 레터박스 패딩 없이 리사이즈만 하면 학습 전처리와 같다.
  */
 class YoloDetector(context: Context) {
 
     private val interpreter: Interpreter
-    private val inputSize = 640
+    // 모델 입력 한 변 (v2 = 800). 카메라 크롭도 이 크기로 만든다.
+    val inputSize: Int
 
     private val labels: List<String>
+
+    // 클래스에서 지웠지만 번호는 유지한 것(55 이동케이블, 2026-10-31 삭제 19종, 45 현수 벨트→주로프 통합).
+    // 학습 데이터 0개라 나올 일은 거의 없지만, 혹시 나와도 버린다. 목록은 kijun_class_map.json 의 deleted.
+    private val deletedClasses: Set<Int>
 
     // 출력 텐서 모양에서 읽는다 (클래스 수가 바뀌어도 코드 수정 불필요)
     private val numChannels: Int
@@ -33,14 +40,21 @@ class YoloDetector(context: Context) {
 
     init {
         val modelBuffer = loadModelFile(context, MODEL_FILE)
-        interpreter = Interpreter(modelBuffer)
+        interpreter = Interpreter(modelBuffer, Interpreter.Options().apply {
+            setNumThreads(4)
+            setUseXNNPACK(true)
+        })
+        inputSize = interpreter.getInputTensor(0).shape()[1]   // [1, S, S, 3]
 
         labels = context.assets.open("labels.txt")
             .bufferedReader()
             .readLines()
             .filter { it.isNotBlank() }
 
-        val shape = interpreter.getOutputTensor(0).shape()   // [1, 4+nc, 8400]
+        KijunClassMap.load(context)
+        deletedClasses = KijunClassMap.deletedIds()
+
+        val shape = interpreter.getOutputTensor(0).shape()   // [1, 4+nc, 앵커수]
         numChannels = shape[1]
         numAnchors = shape[2]
         numClasses = numChannels - 4
@@ -48,7 +62,7 @@ class YoloDetector(context: Context) {
             Log.w("YOLO", "모델 클래스 수($numClasses)와 labels.txt 줄 수(${labels.size})가 다름")
         }
 
-        Log.d("YOLO", "YOLO11 Interpreter initialized: classes=$numClasses anchors=$numAnchors")
+        Log.d("YOLO", "YOLO11 Interpreter initialized: input=$inputSize classes=$numClasses anchors=$numAnchors")
     }
 
     /** YOLO 추론: 반환 타입은 DetectionResult만 */
@@ -64,7 +78,9 @@ class YoloDetector(context: Context) {
         val raw = mutableListOf<DetectionResult>()
 
         // 1) score threshold로 1차 필터 (클래스 점수 최댓값 = 신뢰도)
-        val scoreThreshold = 0.5f
+        // 8차 모델 시험(휴대폰 68장·영상 75장)에서 0.3~0.5 사이는 정확도가 거의 같고(0.83→0.85),
+        // 0.5로 올리면 찾는 부품만 줄어서 0.3으로 둔다.
+        val scoreThreshold = 0.3f
 
         for (i in 0 until numAnchors) {
             var score = 0f
@@ -76,7 +92,7 @@ class YoloDetector(context: Context) {
                     classId = c
                 }
             }
-            if (score < scoreThreshold) continue
+            if (score < scoreThreshold || classId in deletedClasses) continue
 
             val cx = out[0][i]
             val cy = out[1][i]
@@ -88,7 +104,7 @@ class YoloDetector(context: Context) {
             var right = cx + w / 2f
             var bottom = cy + h / 2f
 
-            // 2) 좌표 클램프 (0~640)
+            // 2) 좌표 클램프 (0~입력 크기)
             left = left.coerceIn(0f, inputSize.toFloat())
             top = top.coerceIn(0f, inputSize.toFloat())
             right = right.coerceIn(0f, inputSize.toFloat())
@@ -121,7 +137,7 @@ class YoloDetector(context: Context) {
         )
     }
 
-    /** Bitmap → Float32 입력 버퍼 (1,640,640,3) */
+    /** Bitmap → Float32 입력 버퍼 (1,S,S,3) */
     private fun bitmapToFloatBuffer(bitmap: Bitmap): ByteBuffer {
         val buffer = ByteBuffer
             .allocateDirect(1 * inputSize * inputSize * 3 * 4)
@@ -212,6 +228,6 @@ class YoloDetector(context: Context) {
     }
 
     companion object {
-        private const val MODEL_FILE = "yolo11s_elevator_v1_fp16.tflite"
+        private const val MODEL_FILE = "yolo11s_elevator_v2_fp16.tflite"
     }
 }

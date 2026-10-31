@@ -67,14 +67,15 @@ class KijunSiteCache(context: Context) {
     /**
      * 사이트 전체(본문 + 그림 + 수식 글꼴)를 받아 둔다. Wi-Fi에서만, 이미 있는 그림은 다시 받지 않는다.
      * 본문(index.html)은 조건부 요청이라 바뀌지 않았으면 거의 비용이 없다.
+     * 반환값: 사이트와 맞춰 봐서 저장본이 최신이면 true (Wi-Fi가 아니거나 사이트에 못 닿으면 false).
      */
-    fun prefetchAll() {
-        if (!isUnmetered()) return
+    fun prefetchAll(): Boolean {
+        if (!isUnmetered()) return false
         try {
-            fetch(INDEX)
+            if (!fetch(INDEX)) return false
             fetch("config.json")
             val indexFile = File(root, INDEX)
-            if (!indexFile.exists()) return
+            if (!indexFile.exists()) return false
             val html = indexFile.readText()
 
             val wanted = mutableSetOf<String>()
@@ -100,8 +101,10 @@ class KijunSiteCache(context: Context) {
                     }
                 }
             }
+            return true
         } catch (e: Exception) {
             Log.w(TAG, "prefetch failed", e)
+            return false
         }
     }
 
