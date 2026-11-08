@@ -16,7 +16,7 @@ android {
         applicationId = "com.example.elevatorvision.v2"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
+        versionCode = 6
         versionName = "2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

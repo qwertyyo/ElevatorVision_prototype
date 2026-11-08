@@ -13,7 +13,7 @@ import kotlin.math.max
  * YOLO11 TFLite 추론 (Ultralytics → onnx2tf 변환본).
  * 입력 [1,S,S,3] float32 RGB 0~1, 출력 [1, 4+클래스수, 앵커수]:
  * 채널 0~3 = cx,cy,w,h (S 입력 기준 픽셀), 4~ = 클래스 점수(sigmoid 적용됨, objectness 없음), NMS는 앱에서.
- * v2 모델(2.0 = 8차 학습, 2.1 = 10차, 2.2 = 11차 학습, 77클래스)은 S=800, 앵커 13125. 입력 크기도 모델에서 읽으므로 모델만 바꾸면 된다.
+ * v2.2의 12차 학습 모델(77클래스)은 S=800, 앵커 13125. 입력 크기는 모델에서 읽는다.
  * 자세한 명세: D:\elevator_dataset\runs\rf_v3_yolo11s\TFLITE_SPEC.md (v1, S=640 기준)
  * 입력은 ImageUtils가 만든 정사각형 크롭이라 레터박스 패딩 없이 리사이즈만 하면 학습 전처리와 같다.
  */
